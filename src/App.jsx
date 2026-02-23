@@ -283,42 +283,33 @@ export default function App() {
     setLoading(true);
     setApiError(false);
     try {
-      // Uses Yahoo Finance via allorigins proxy — no API key needed, no CORS issues
-      const mapped = {};
-      await Promise.all(TICKERS.map(async (ticker) => {
-        try {
-          const url = `https://api.allorigins.win/get?url=${encodeURIComponent(`https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`)}`;
-          const res = await fetch(url);
-          const wrapper = await res.json();
-          const data = JSON.parse(wrapper.contents);
-          const meta = data?.chart?.result?.[0]?.meta;
-          if (meta && meta.regularMarketPrice) {
-            const price = meta.regularMarketPrice;
-            const prevClose = meta.chartPreviousClose || meta.previousClose || price;
-            const change = price - prevClose;
-            const changePct = (change / prevClose) * 100;
-            mapped[ticker] = {
-              price: price.toFixed(2),
-              change: change.toFixed(2),
-              changePct: changePct.toFixed(2),
-              dayHigh: meta.regularMarketDayHigh?.toFixed(2) || null,
-              dayLow: meta.regularMarketDayLow?.toFixed(2) || null,
-              marketCap: meta.marketCap || null,
-              volume: meta.regularMarketVolume || null,
+      // Calls our own Vercel serverless function — server-to-server, no CORS
+      const symbols = TICKERS.join(",");
+      const res = await fetch(`/api/quote?symbols=${symbols}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      if (Array.isArray(json) && json.length > 0) {
+        const mapped = {};
+        json.forEach(q => {
+          if (q && q.symbol) {
+            mapped[q.symbol] = {
+              price: q.price != null ? Number(q.price).toFixed(2) : null,
+              change: q.change != null ? Number(q.change).toFixed(2) : null,
+              changePct: q.changesPercentage != null ? Number(q.changesPercentage).toFixed(2) : null,
+              dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null,
+              dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null,
+              marketCap: q.marketCap,
+              volume: q.volume,
             };
           }
-        } catch (e) {
-          console.warn(`Failed to fetch ${ticker}:`, e);
-        }
-      }));
-      if (Object.keys(mapped).length > 0) {
-        setLiveData(mapped);
-        setLastUpdated(new Date().toLocaleTimeString());
-      } else {
-        setApiError(true);
-      }
+        });
+        if (Object.keys(mapped).length > 0) {
+          setLiveData(mapped);
+          setLastUpdated(new Date().toLocaleTimeString());
+        } else { setApiError(true); }
+      } else { setApiError(true); }
     } catch (err) {
-      console.error("Fetch error:", err);
+      console.error("Quote fetch error:", err);
       setApiError(true);
     }
     setLoading(false);
@@ -421,9 +412,9 @@ export default function App() {
       </div>
 
       {/* Tabs */}
-      <div className="tabs" style={{ display: "flex", overflowX: "auto", background: "white", borderBottom: "2px solid #f0f0f0", padding: "0 8px", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", scrollbarWidth: "none" }}>
+      <div className="tabs" style={{ display: "flex", overflowX: "auto", background: "white", borderBottom: "2px solid #f0f0f0", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", scrollbarWidth: "none" }}>
         {TABS.map((tab, i) => (
-          <button key={i} onClick={() => setActiveTab(i)} style={{ padding: "12px 11px", border: "none", background: "none", color: activeTab === i ? "#667eea" : "#999", fontWeight: activeTab === i ? "800" : "500", fontSize: "11px", cursor: "pointer", borderBottom: activeTab === i ? "3px solid #667eea" : "3px solid transparent", whiteSpace: "nowrap", transition: "all 0.2s ease" }}>{tab}</button>
+          <button key={i} onClick={() => setActiveTab(i)} style={{ flex: 1, padding: "12px 4px", border: "none", background: "none", color: activeTab === i ? "#667eea" : "#999", fontWeight: activeTab === i ? "800" : "500", fontSize: "11px", cursor: "pointer", borderBottom: activeTab === i ? "3px solid #667eea" : "3px solid transparent", whiteSpace: "nowrap", transition: "all 0.2s ease", textAlign: "center" }}>{tab}</button>
         ))}
       </div>
 
