@@ -263,6 +263,15 @@ export default function App() {
   const [greeting, setGreeting] = useState("");
   const [showGreeting, setShowGreeting] = useState(true);
   const [liveData, setLiveData] = useState({});
+  const [prevLiveData, setPrevLiveData] = useState({});
+  const [flashMap, setFlashMap] = useState({});
+  const [darkMode, setDarkMode] = useState(false);
+  const [nickname, setNickname] = useState("");
+  const [nicknameInput, setNicknameInput] = useState("");
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [priceAlerts, setPriceAlerts] = useState({ SCHD: "23.50", GEV: "750", LLY: "750", GOOGL: "195", ORCL: "", MELI: "", CRM: "", ABBV: "", MRK: "" });
+  const [confetti, setConfetti] = useState([]);
+  const [showDonut, setShowDonut] = useState(false);
   const [countdown, setCountdown] = useState(15);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
@@ -305,7 +314,19 @@ export default function App() {
           }
         });
         if (Object.keys(mapped).length > 0) {
-          setLiveData(mapped);
+          // Flash animation on price change
+          setLiveData(prev => {
+            const flashes = {};
+            Object.keys(mapped).forEach(sym => {
+              if (prev[sym] && prev[sym].price !== mapped[sym].price) flashes[sym] = true;
+            });
+            if (Object.keys(flashes).length > 0) {
+              setFlashMap(flashes);
+              setTimeout(() => setFlashMap({}), 800);
+            }
+            setPrevLiveData(prev);
+            return mapped;
+          });
           setLastUpdated(new Date().toLocaleTimeString());
         } else { setApiError(true); }
       } else { setApiError(true); }
@@ -329,6 +350,116 @@ export default function App() {
     const tick = setInterval(() => setCountdown(c => c > 0 ? c - 1 : 15), 1000);
     return () => clearInterval(tick);
   }, []);
+
+  // Confetti launcher
+  const launchConfetti = () => {
+    const pieces = Array.from({ length: 60 }, (_, i) => ({
+      id: i, x: Math.random() * 100, color: ["#667eea","#f093fb","#4ade80","#fbbf24","#f87171","#34d399"][i % 6],
+      size: Math.random() * 8 + 4, delay: Math.random() * 1.5, duration: Math.random() * 2 + 2,
+    }));
+    setConfetti(pieces);
+    setTimeout(() => setConfetti([]), 4000);
+  };
+
+  // Check if portfolio is up today and fire confetti
+  useEffect(() => {
+    if (Object.keys(liveData).length === 0) return;
+    const totalChangePct = TICKERS.reduce((sum, t) => {
+      const ld = liveData[t]; const d = staticData[t];
+      return sum + (ld ? parseFloat(ld.changePct) * (d.allocation / 100) : 0);
+    }, 0);
+    if (totalChangePct > 0.1) launchConfetti();
+  }, [lastUpdated]);
+
+  // Live portfolio value from P&L entries
+  const livePortfolioValue = () => {
+    let total = 0, hasAny = false;
+    TICKERS.forEach(t => {
+      const pos = positions[t]; const ld = liveData[t];
+      if (pos?.shares && pos?.avgCost && ld?.price) {
+        total += parseFloat(ld.price) * parseFloat(pos.shares);
+        hasAny = true;
+      }
+    });
+    return hasAny ? total : null;
+  };
+
+  // Weighted portfolio change today
+  const todayPortfolioChange = () => {
+    if (Object.keys(liveData).length === 0) return null;
+    let weightedPct = 0;
+    TICKERS.forEach(t => {
+      const ld = liveData[t]; const d = staticData[t];
+      if (ld?.changePct) weightedPct += parseFloat(ld.changePct) * (d.allocation / 100);
+    });
+    return weightedPct;
+  };
+
+  const portfolioValue = livePortfolioValue();
+  const todayPct = todayPortfolioChange();
+
+  // Sparkline component
+  const Sparkline = ({ ticker, color }) => {
+    const ld = liveData[ticker];
+    if (!ld) return <div style={{ width: 50, height: 20, background: "rgba(255,255,255,0.1)", borderRadius: 4 }} />;
+    const isUp = parseFloat(ld.changePct) >= 0;
+    const c = isUp ? "#4ade80" : "#f87171";
+    const points = [0,0.3,0.15,0.6,0.4,0.7,0.5,0.8,0.65,1].map((v, i) => {
+      const jitter = (Math.sin(ticker.charCodeAt(0) * (i+1)) * 0.3 + 0.5);
+      return isUp ? v * jitter : 1 - v * jitter;
+    });
+    const path = points.map((p, i) => `${i === 0 ? "M" : "L"} ${(i / 9) * 50} ${p * 18 + 1}`).join(" ");
+    return (
+      <svg width="50" height="20" style={{ display: "block" }}>
+        <path d={path} fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    );
+  };
+
+  // Donut chart
+  const DonutChart = () => {
+    const cx = 80, cy = 80, r = 60, strokeW = 22;
+    const circumference = 2 * Math.PI * r;
+    let offset = 0;
+    const slices = Object.entries(staticData).map(([ticker, d]) => {
+      const pct = d.allocation / 100;
+      const dash = pct * circumference;
+      const gap = circumference - dash;
+      const slice = { ticker, pct, dash, gap, offset, gradient: d.gradient, accent: d.accent };
+      offset += dash;
+      return slice;
+    });
+    return (
+      <div style={{ display: "flex", alignItems: "center", gap: "20px", flexWrap: "wrap", justifyContent: "center" }}>
+        <svg width="160" height="160" viewBox="0 0 160 160">
+          {slices.map((s, i) => (
+            <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.accent} strokeWidth={strokeW}
+              strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={-s.offset + circumference / 4}
+              style={{ cursor: "pointer", opacity: selected === s.ticker ? 1 : 0.7, transition: "opacity 0.2s" }}
+              onClick={() => { setSelected(s.ticker); setActiveTab(0); }} />
+          ))}
+          <text x={cx} y={cy - 6} textAnchor="middle" fontSize="11" fill="#666" fontWeight="600">Portfolio</text>
+          <text x={cx} y={cy + 10} textAnchor="middle" fontSize="11" fill="#666" fontWeight="600">Split</text>
+        </svg>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "6px" }}>
+          {Object.entries(staticData).map(([ticker, d]) => (
+            <div key={ticker} onClick={() => { setSelected(ticker); setActiveTab(0); }} style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", padding: "4px 8px", borderRadius: "8px", background: selected === ticker ? `${d.accent}15` : "transparent" }}>
+              <div style={{ width: 10, height: 10, borderRadius: "50%", background: d.accent, flexShrink: 0 }} />
+              <span style={{ fontSize: "12px", fontWeight: "700", color: d.accent }}>{ticker}</span>
+              <span style={{ fontSize: "11px", color: "#888" }}>{d.allocation}%</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  };
+
+  const dm = darkMode;
+  const bg = dm ? "#0f0f1a" : "linear-gradient(160deg, #f8f9ff 0%, #f0f4ff 50%, #fdf0ff 100%)";
+  const cardBg = dm ? "#1a1a2e" : "white";
+  const textPrimary = dm ? "#e2e8f0" : "#333";
+  const textSecondary = dm ? "#94a3b8" : "#888";
+  const borderColor = dm ? "#2d2d4e" : "#f0f0f0";
 
   const data = staticData[selected];
   const live = liveData[selected];
@@ -374,7 +505,27 @@ export default function App() {
   const totals = totalPortfolioStats();
 
   return (
-    <div style={{ minHeight: "100vh", background: "linear-gradient(160deg, #f8f9ff 0%, #f0f4ff 50%, #fdf0ff 100%)", fontFamily: "'Segoe UI', system-ui, sans-serif", paddingBottom: "48px" }}>
+    <div style={{ minHeight: "100vh", background: bg, fontFamily: "'Segoe UI', system-ui, sans-serif", paddingBottom: "48px", transition: "background 0.4s ease" }}>
+
+      {/* Confetti */}
+      {confetti.map(p => (
+        <div key={p.id} style={{ position: "fixed", left: `${p.x}%`, top: "-20px", width: p.size, height: p.size, background: p.color, borderRadius: "2px", zIndex: 9999, animation: `confettiFall ${p.duration}s ${p.delay}s ease-in forwards`, pointerEvents: "none" }} />
+      ))}
+
+      {/* Nickname Modal */}
+      {showNicknameModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
+          <div style={{ background: cardBg, borderRadius: "24px", padding: "28px 24px", width: "100%", maxWidth: "360px", boxShadow: "0 24px 64px rgba(0,0,0,0.3)" }}>
+            <div style={{ fontSize: "22px", fontWeight: "900", color: textPrimary, marginBottom: "6px" }}>✏️ Customize Your Hub</div>
+            <div style={{ fontSize: "13px", color: textSecondary, marginBottom: "18px" }}>Give your portfolio a personal name</div>
+            <input value={nicknameInput} onChange={e => setNicknameInput(e.target.value)} placeholder="e.g. Sarah & Mike's Portfolio" style={{ width: "100%", padding: "12px 14px", borderRadius: "12px", border: `2px solid #667eea`, fontSize: "14px", outline: "none", boxSizing: "border-box", background: cardBg, color: textPrimary }} />
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", marginTop: "16px" }}>
+              <button onClick={() => setShowNicknameModal(false)} style={{ padding: "12px", borderRadius: "12px", border: `2px solid ${borderColor}`, background: "none", color: textSecondary, fontWeight: "700", cursor: "pointer", fontSize: "13px" }}>Cancel</button>
+              <button onClick={() => { setNickname(nicknameInput); setShowNicknameModal(false); }} style={{ padding: "12px", borderRadius: "12px", border: "none", background: "linear-gradient(135deg, #667eea, #f093fb)", color: "white", fontWeight: "700", cursor: "pointer", fontSize: "13px" }}>Save 💖</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showGreeting && (
         <div style={{ position: "fixed", top: "20px", left: "50%", transform: "translateX(-50%)", zIndex: 1000, background: "linear-gradient(135deg, #667eea, #f093fb)", color: "white", padding: "14px 28px", borderRadius: "100px", fontSize: "15px", fontWeight: "700", boxShadow: "0 8px 32px rgba(102,126,234,0.4)", whiteSpace: "nowrap", animation: "fadeInDown 0.5s ease" }}>
@@ -385,13 +536,30 @@ export default function App() {
       <style>{`
         @keyframes fadeInDown { from { opacity:0; transform:translateX(-50%) translateY(-20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes confettiFall { 0% { transform: translateY(-20px) rotate(0deg); opacity:1; } 100% { transform: translateY(100vh) rotate(720deg); opacity:0; } }
+        @keyframes flashGreen { 0%,100% { background: transparent; } 50% { background: rgba(74,222,128,0.15); } }
+        @keyframes countUp { from { opacity:0; transform: translateY(4px); } to { opacity:1; transform: translateY(0); } }
         .tabs::-webkit-scrollbar { display: none; }
+        .price-val { animation: countUp 0.3s ease; }
       `}</style>
 
       {/* Header */}
       <div style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)", padding: "28px 20px 24px", textAlign: "center", color: "white" }}>
-        <div style={{ fontSize: "11px", fontWeight: "700", letterSpacing: "3px", opacity: 0.85, marginBottom: "6px", textTransform: "uppercase" }}>Joint Brokerage Portfolio</div>
-        <h1 style={{ fontSize: "clamp(22px, 5vw, 36px)", fontWeight: "900", margin: "0 0 14px" }}>Our Investment Hub 💰</h1>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px", padding: "0 4px" }}>
+          <div style={{ fontSize: "10px", fontWeight: "700", letterSpacing: "3px", opacity: 0.85, textTransform: "uppercase" }}>Joint Brokerage Portfolio</div>
+          <div style={{ display: "flex", gap: "8px" }}>
+            <button onClick={() => setShowNicknameModal(true)} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "white", borderRadius: "100px", padding: "4px 10px", fontSize: "11px", cursor: "pointer", fontWeight: "600" }}>✏️ Name</button>
+            <button onClick={() => setDarkMode(d => !d)} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "white", borderRadius: "100px", padding: "4px 10px", fontSize: "13px", cursor: "pointer" }}>{darkMode ? "☀️" : "🌙"}</button>
+          </div>
+        </div>
+        <h1 style={{ fontSize: "clamp(20px, 5vw, 34px)", fontWeight: "900", margin: "0 0 6px" }}>{nickname || "Our Investment Hub"} 💰</h1>
+        {todayPct !== null && (
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: todayPct >= 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)", borderRadius: "100px", padding: "5px 16px", marginBottom: "10px" }}>
+            <span style={{ fontSize: "18px" }}>{todayPct >= 0 ? "📈" : "📉"}</span>
+            <span style={{ fontSize: "13px", fontWeight: "800", color: "white" }}>Portfolio {todayPct >= 0 ? "+" : ""}{todayPct.toFixed(2)}% today</span>
+            {portfolioValue && <span style={{ fontSize: "12px", fontWeight: "600", color: "rgba(255,255,255,0.85)" }}>• ${portfolioValue.toFixed(2)} live value</span>}
+          </div>
+        )}
 
         {/* Live Status */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "14px" }}>
@@ -402,7 +570,7 @@ export default function App() {
 
         {/* Summary Pills — CORRECTED 30/70 */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: "7px", marginBottom: "16px" }}>
-          {[{ label: "Capital", value: "$1,129.59" }, { label: "Positions", value: "7" }, { label: "Stocks", value: "70%" }, { label: "ETFs", value: "30% ✅" }, { label: "Yield", value: "~1%" }, { label: "Review", value: "Quarterly" }].map((item, i) => (
+          {[{ label: "Capital", value: portfolioValue ? `$${portfolioValue.toFixed(2)}` : "$1,129.59" }, { label: "Positions", value: "7" }, { label: "Stocks", value: "70%" }, { label: "ETFs", value: "30% ✅" }, { label: "Yield", value: "~1%" }, { label: "Review", value: "Quarterly" }].map((item, i) => (
             <div key={i} style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: "100px", padding: "5px 12px", fontSize: "11px", fontWeight: "600" }}>
               <span style={{ opacity: 0.8 }}>{item.label}: </span><span style={{ fontWeight: "800" }}>{item.value}</span>
             </div>
@@ -425,13 +593,13 @@ export default function App() {
       </div>
 
       {/* Tabs */}
-      <div className="tabs" style={{ display: "flex", overflowX: "auto", background: "white", borderBottom: "2px solid #f0f0f0", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", scrollbarWidth: "none" }}>
+      <div className="tabs" style={{ display: "flex", overflowX: "auto", background: dm ? "#1a1a2e" : "white", borderBottom: `2px solid ${borderColor}`, position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", scrollbarWidth: "none" }}>
         {TABS.map((tab, i) => (
           <button key={i} onClick={() => setActiveTab(i)} style={{ flex: 1, padding: "14px 4px", border: "none", background: activeTab === i ? "linear-gradient(180deg, #f5f3ff 0%, white 100%)" : "none", color: activeTab === i ? "#667eea" : "#aaa", fontWeight: activeTab === i ? "800" : "500", fontSize: "12.5px", cursor: "pointer", borderBottom: activeTab === i ? "3px solid #667eea" : "3px solid transparent", whiteSpace: "nowrap", transition: "all 0.2s ease", textAlign: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", letterSpacing: activeTab === i ? "-0.2px" : "0" }}>{tab}</button>
         ))}
       </div>
 
-      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 0" }}>
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 16px 0", color: textPrimary }}>
 
         {/* ── TAB 0: PORTFOLIO ── */}
         {activeTab === 0 && (
@@ -441,16 +609,33 @@ export default function App() {
                 const isSelected = selected === ticker;
                 const ld = liveData[ticker];
                 const isUp = ld && parseFloat(ld.changePct) >= 0;
+                const pct = ld ? Math.abs(parseFloat(ld.changePct)) : 0;
+                const intensity = Math.min(pct / 3, 1);
+                const flash = flashMap[ticker];
                 return (
-                  <button key={ticker} onClick={() => setSelected(ticker)} style={{ padding: "9px 15px", borderRadius: "100px", border: "none", background: isSelected ? staticData[ticker].gradient : "white", color: isSelected ? "white" : "#555", fontWeight: "700", fontSize: "12px", cursor: "pointer", boxShadow: isSelected ? "0 4px 16px rgba(0,0,0,0.2)" : "0 2px 8px rgba(0,0,0,0.06)", transform: isSelected ? "translateY(-2px)" : "none", transition: "all 0.2s ease" }}>
-                    <div>{staticData[ticker].emoji} {ticker}</div>
-                    {ld && <div style={{ fontSize: "10px", opacity: 0.85, marginTop: "1px", color: isSelected ? "white" : (isUp ? "#10b981" : "#ef4444") }}>{isUp ? "▲" : "▼"}{Math.abs(parseFloat(ld.changePct))}%</div>}
+                  <button key={ticker} onClick={() => setSelected(ticker)} style={{ padding: "8px 12px", borderRadius: "16px", border: "none", background: isSelected ? staticData[ticker].gradient : (dm ? "#1a1a2e" : "white"), color: isSelected ? "white" : textPrimary, fontWeight: "700", fontSize: "12px", cursor: "pointer", boxShadow: flash ? `0 0 16px ${isUp ? "#4ade80" : "#f87171"}` : isSelected ? "0 4px 16px rgba(0,0,0,0.2)" : "0 2px 8px rgba(0,0,0,0.06)", transform: isSelected ? "translateY(-2px)" : "none", transition: "all 0.2s ease", minWidth: "70px" }}>
+                    <div style={{ marginBottom: "3px" }}>{staticData[ticker].emoji} {ticker}</div>
+                    <Sparkline ticker={ticker} />
+                    {ld && (
+                      <div style={{ fontSize: "10px", marginTop: "3px", fontWeight: "800", color: isSelected ? "white" : (isUp ? `rgba(16,${Math.round(185 - intensity*50)},130,1)` : `rgba(${Math.round(220 + intensity*35)},38,38,1)`) }}>
+                        {isUp ? "▲" : "▼"}{pct.toFixed(2)}%
+                      </div>
+                    )}
                   </button>
                 );
               })}
             </div>
 
-            <div style={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 12px 48px rgba(0,0,0,0.1)", background: "white" }}>
+            <div style={{ textAlign: "center", marginBottom: "12px" }}>
+              <button onClick={() => setShowDonut(d => !d)} style={{ background: showDonut ? "linear-gradient(135deg, #667eea, #764ba2)" : (dm ? "#1a1a2e" : "white"), color: showDonut ? "white" : textSecondary, border: "none", borderRadius: "100px", padding: "7px 18px", fontSize: "12px", fontWeight: "700", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", transition: "all 0.2s ease" }}>🥧 {showDonut ? "Hide" : "Show"} Allocation Chart</button>
+            </div>
+            {showDonut && (
+              <div style={{ background: dm ? "#1a1a2e" : "white", borderRadius: "20px", padding: "20px", marginBottom: "16px", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
+                <div style={{ textAlign: "center", fontWeight: "800", fontSize: "15px", color: textPrimary, marginBottom: "16px" }}>📊 Portfolio Allocation</div>
+                <DonutChart />
+              </div>
+            )}
+            <div style={{ borderRadius: "24px", overflow: "hidden", boxShadow: "0 12px 48px rgba(0,0,0,0.1)", background: dm ? "#1a1a2e" : "white" }}>
               <div style={{ background: data.gradient, padding: "22px 20px 18px", color: "white", position: "relative", overflow: "hidden" }}>
                 <div style={{ position: "absolute", top: -30, right: -30, width: 130, height: 130, borderRadius: "50%", background: "rgba(255,255,255,0.1)" }} />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px", position: "relative" }}>
@@ -472,13 +657,13 @@ export default function App() {
               </div>
 
               {/* Price Row */}
-              <div style={{ background: data.light, padding: "14px 18px", borderBottom: "1px solid #f0f0f0" }}>
+              <div style={{ background: dm ? "#0f0f1a" : data.light, padding: "14px 18px", borderBottom: `1px solid ${borderColor}` }}>
                 {live ? (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", textAlign: "center" }}>
                     {[{ label: "Live Price", val: `$${live.price}`, color: "#333" }, { label: "Today", val: `${parseFloat(live.changePct) >= 0 ? "▲" : "▼"}${Math.abs(parseFloat(live.changePct))}%`, color: parseFloat(live.changePct) >= 0 ? "#10b981" : "#ef4444" }, { label: "Market Cap", val: fmtMktCap(live.marketCap), color: "#555" }, { label: "To Target", val: calcUpside(selected) ? `${calcUpside(selected)}%` : "N/A", color: "#6366f1" }].map((s, i) => (
-                      <div key={i} style={{ borderRight: i < 3 ? "1px solid #e8e8e8" : "none" }}>
-                        <div style={{ fontSize: "14px", fontWeight: "800", color: s.color }}>{s.val}</div>
-                        <div style={{ fontSize: "9px", color: "#bbb", fontWeight: "600", letterSpacing: "1px", textTransform: "uppercase", marginTop: "3px" }}>{s.label}</div>
+                      <div key={i} style={{ borderRight: i < 3 ? `1px solid ${borderColor}` : "none" }}>
+                        <div className={s.cls || ""} style={{ fontSize: "14px", fontWeight: "800", color: s.color }}>{s.val}</div>
+                        <div style={{ fontSize: "9px", color: textSecondary, fontWeight: "600", letterSpacing: "1px", textTransform: "uppercase", marginTop: "3px" }}>{s.label}</div>
                       </div>
                     ))}
                   </div>
@@ -868,7 +1053,20 @@ export default function App() {
                       <span style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s ease", opacity: 0.4, fontSize: "12px" }}>▼</span>
                     </div>
                   </button>
-                  {isOpen && <div style={{ padding: "0 18px 14px", borderTop: "1px solid #f5f5f5", paddingTop: "12px", fontSize: "13.5px", color: "#555", lineHeight: "1.7" }}>{item.why}</div>}
+                  {isOpen && (
+                    <div style={{ padding: "0 18px 14px", borderTop: "1px solid #f5f5f5", paddingTop: "12px" }}>
+                      <div style={{ fontSize: "13.5px", color: textSecondary, lineHeight: "1.7", marginBottom: "12px" }}>{item.why}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px", background: dm ? "#0f0f1a" : "#f8f8f8", borderRadius: "10px", padding: "10px 14px" }}>
+                        <span style={{ fontSize: "12px", fontWeight: "700", color: item.color }}>🔔 Alert me at $</span>
+                        <input type="number" value={priceAlerts[item.ticker] || ""} onChange={e => setPriceAlerts(p => ({ ...p, [item.ticker]: e.target.value }))} placeholder="Set target price" style={{ flex: 1, padding: "6px 10px", borderRadius: "8px", border: `1.5px solid ${item.color}40`, fontSize: "13px", outline: "none", background: dm ? "#1a1a2e" : "white", color: textPrimary }} />
+                        {priceAlerts[item.ticker] && liveData[item.ticker] && (
+                          <span style={{ fontSize: "11px", fontWeight: "700", color: parseFloat(liveData[item.ticker]?.price) <= parseFloat(priceAlerts[item.ticker]) ? "#10b981" : "#f59e0b", whiteSpace: "nowrap" }}>
+                            {parseFloat(liveData[item.ticker]?.price) <= parseFloat(priceAlerts[item.ticker]) ? "✅ IN RANGE!" : `$${liveData[item.ticker]?.price} now`}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -889,7 +1087,7 @@ export default function App() {
 
       </div>
 
-      <div style={{ textAlign: "center", marginTop: "32px", fontSize: "11px", color: "#ccc", padding: "0 16px" }}>
+      <div style={{ textAlign: "center", marginTop: "32px", fontSize: "11px", color: textSecondary, padding: "0 16px" }}>
         Not financial advice • Personal reference only • Review quarterly 💛<br />
         <span style={{ fontSize: "10px" }}>Live prices via Financial Modeling Prep • 70% Stocks / 30% ETFs ✅ • Built with 💖</span>
       </div>
