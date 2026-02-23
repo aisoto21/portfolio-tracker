@@ -263,6 +263,7 @@ export default function App() {
   const [greeting, setGreeting] = useState("");
   const [showGreeting, setShowGreeting] = useState(true);
   const [liveData, setLiveData] = useState({});
+  const [countdown, setCountdown] = useState(15);
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [apiError, setApiError] = useState(false);
@@ -316,6 +317,18 @@ export default function App() {
   }, []);
 
   useEffect(() => { fetchLiveData(); }, [fetchLiveData]);
+
+  // Auto-refresh every 45 seconds
+  useEffect(() => {
+    const interval = setInterval(() => { fetchLiveData(); setCountdown(15); }, 15000);
+    return () => clearInterval(interval);
+  }, [fetchLiveData]);
+
+  // Countdown timer
+  useEffect(() => {
+    const tick = setInterval(() => setCountdown(c => c > 0 ? c - 1 : 15), 1000);
+    return () => clearInterval(tick);
+  }, []);
 
   const data = staticData[selected];
   const live = liveData[selected];
@@ -383,7 +396,7 @@ export default function App() {
         {/* Live Status */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", marginBottom: "14px" }}>
           {loading ? <div style={{ width: "10px", height: "10px", border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid white", borderRadius: "50%", animation: "spin 1s linear infinite" }} /> : <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: apiError ? "#fbbf24" : "#4ade80", boxShadow: apiError ? "0 0 6px #fbbf24" : "0 0 6px #4ade80" }} />}
-          <span style={{ fontSize: "11px", opacity: 0.85, fontWeight: "600" }}>{loading ? "Fetching live data..." : apiError ? "Using reference data" : `Live prices • Updated ${lastUpdated}`}</span>
+          <span style={{ fontSize: "11px", opacity: 0.85, fontWeight: "600" }}>{loading ? "Fetching live data..." : apiError ? "Using reference data" : `Live prices • Updated ${lastUpdated} • Refreshes in ${countdown}s`}</span>
           <button onClick={fetchLiveData} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "white", borderRadius: "100px", padding: "3px 10px", fontSize: "11px", cursor: "pointer", fontWeight: "600" }}>↻</button>
         </div>
 
@@ -414,7 +427,7 @@ export default function App() {
       {/* Tabs */}
       <div className="tabs" style={{ display: "flex", overflowX: "auto", background: "white", borderBottom: "2px solid #f0f0f0", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", scrollbarWidth: "none" }}>
         {TABS.map((tab, i) => (
-          <button key={i} onClick={() => setActiveTab(i)} style={{ flex: 1, padding: "12px 4px", border: "none", background: "none", color: activeTab === i ? "#667eea" : "#999", fontWeight: activeTab === i ? "800" : "500", fontSize: "11px", cursor: "pointer", borderBottom: activeTab === i ? "3px solid #667eea" : "3px solid transparent", whiteSpace: "nowrap", transition: "all 0.2s ease", textAlign: "center" }}>{tab}</button>
+          <button key={i} onClick={() => setActiveTab(i)} style={{ flex: 1, padding: "14px 4px", border: "none", background: activeTab === i ? "linear-gradient(180deg, #f5f3ff 0%, white 100%)" : "none", color: activeTab === i ? "#667eea" : "#aaa", fontWeight: activeTab === i ? "800" : "500", fontSize: "12.5px", cursor: "pointer", borderBottom: activeTab === i ? "3px solid #667eea" : "3px solid transparent", whiteSpace: "nowrap", transition: "all 0.2s ease", textAlign: "center", fontFamily: "'Segoe UI', system-ui, sans-serif", letterSpacing: activeTab === i ? "-0.2px" : "0" }}>{tab}</button>
         ))}
       </div>
 
