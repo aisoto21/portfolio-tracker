@@ -113,6 +113,63 @@ const resources = [
   { name: "SEC EDGAR", use: "Official 10-K, 10-Q, insider activity filings", url: "https://sec.gov/edgar", color: "#6366f1" },
 ];
 
+// Technical signal explanations
+const technicalContext = {
+  rsi: {
+    oversold:    { label: "RSI Oversold", color: "#ef4444", icon: "🔴", meaning: "RSI below 30 — stock has been sold off hard and may be due for a bounce. Often a buying opportunity for long-term investors, but can keep falling in strong downtrends.", action: "Consider adding to your position on confirmed support. Don't catch a falling knife — wait for a green day first." },
+    neutral:     { label: "RSI Neutral",  color: "#10b981", icon: "🟢", meaning: "RSI between 30–70 — healthy momentum zone. Stock is neither overbought nor oversold. This is the ideal range for entries.", action: "Green light zone. No extreme momentum warning in either direction." },
+    overbought:  { label: "RSI Overbought", color: "#f59e0b", icon: "🟡", meaning: "RSI above 70 — stock has run up quickly and may be due for a pullback or consolidation. Not a sell signal on its own, but be cautious adding at these levels.", action: "Avoid chasing here. If you're already in profit, consider whether this is a good spot to trim a small amount." },
+  },
+  ma50: {
+    above: { label: "Above 50-Day MA ✅", color: "#10b981", icon: "🟢", meaning: "The stock is trading above its 50-day moving average — a sign of short-to-medium term upward momentum. Institutions use the 50MA as a key support level.", action: "Bullish signal. Holding above the 50MA is healthy. A pullback TO the 50MA is often a good buy opportunity." },
+    below: { label: "Below 50-Day MA ⚠️", color: "#f59e0b", icon: "🟡", meaning: "The stock has fallen below its 50-day moving average — a sign of short-term weakness. Not a crisis, but worth watching.", action: "Monitor closely. If it reclaims the 50MA with volume, that's a bullish re-entry signal. If it keeps falling, wait for the 200MA." },
+  },
+  ma200: {
+    above: { label: "Above 200-Day MA ✅", color: "#10b981", icon: "🟢", meaning: "The stock is in a long-term uptrend — above the 200-day moving average. This is the most important moving average. When above it, the long-term trend is your friend.", action: "Strong long-term bullish signal. This is the signal Warren Buffett-style investors care about most. Keep holding." },
+    below: { label: "Below 200-Day MA ❌", color: "#ef4444", icon: "🔴", meaning: "The stock is in a long-term downtrend — below its 200-day moving average. This is a serious caution flag that should make you re-examine your thesis.", action: "Time to ask hard questions: Has the fundamental thesis changed? If not, this could be a deep value opportunity. If yes, consider exiting." },
+  },
+};
+
+// Mini SVG line chart
+function MiniLineChart({ data, color = "#667eea", height = 80 }) {
+  if (!data || data.length < 2) return (
+    <div style={{ height, display: "flex", alignItems: "center", justifyContent: "center", color: "#ccc", fontSize: 13 }}>
+      Add positions + wait for price refreshes to build chart data
+    </div>
+  );
+  const vals = data.map(d => d.value).filter(v => v != null && !isNaN(v));
+  if (vals.length < 2) return null;
+  const min = Math.min(...vals), max = Math.max(...vals), range = max - min || 1;
+  const w = 600, h = height;
+  const pts = vals.map((v, i) => `${(i / (vals.length - 1)) * w},${h - ((v - min) / range) * (h - 10) - 5}`);
+  const pathD = "M " + pts.join(" L ");
+  const areaD = pathD + ` L ${w},${h} L 0,${h} Z`;
+  const isUp = vals[vals.length - 1] >= vals[0];
+  const c = isUp ? "#10b981" : "#ef4444";
+  return (
+    <div style={{ position: "relative" }}>
+      <svg viewBox={`0 0 ${w} ${h}`} style={{ width: "100%", height, display: "block" }} preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="chartGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={c} stopOpacity="0.2" />
+            <stop offset="100%" stopColor={c} stopOpacity="0.01" />
+          </linearGradient>
+        </defs>
+        <path d={areaD} fill="url(#chartGrad)" />
+        <path d={pathD} fill="none" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        {/* Current value dot */}
+        <circle cx={(vals.length - 1) / (vals.length - 1) * w} cy={h - ((vals[vals.length-1] - min) / range) * (h - 10) - 5} r="4" fill={c} />
+      </svg>
+      {/* Labels */}
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#bbb", marginTop: 4 }}>
+        <span>{data[0]?.time}</span>
+        <span style={{ fontWeight: 700, color: c }}>{isUp ? "▲" : "▼"} {Math.abs(((vals[vals.length-1] - vals[0]) / vals[0]) * 100).toFixed(2)}% this session</span>
+        <span>{data[data.length-1]?.time}</span>
+      </div>
+    </div>
+  );
+}
+
 function ConvictionBar({ score }) {
   return (
     <div>
@@ -161,6 +218,9 @@ export default function App() {
   const [editingPositions, setEditingPositions] = useState(false);
   const [countdown, setCountdown] = useState(15);
   const [priceAlerts, setPriceAlerts] = useState({ SCHD: "", GEV: "750", LLY: "", GOOGL: "", ORCL: "", MELI: "", CRM: "", ABBV: "", MRK: "" });
+  const [vix, setVix] = useState(null);
+  const [portfolioHistory, setPortfolioHistory] = useState([]);
+  const [tooltip, setTooltip] = useState(null);
   const [confetti, setConfetti] = useState([]);
   const [showDonut, setShowDonut] = useState(false);
   const [nickname, setNickname] = useState("");
@@ -184,12 +244,17 @@ export default function App() {
   const fetchLiveData = useCallback(async () => {
     setLoading(true); setApiError(false);
     try {
-      const res = await fetch(`/api/quote?symbols=${TICKERS.join(",")}`);
+      const res = await fetch(`/api/quote?symbols=${TICKERS.join(",")},^VIX`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (Array.isArray(json) && json.length > 0) {
         const mapped = {};
-        json.forEach(q => { if (q?.symbol) mapped[q.symbol] = { price: q.price != null ? Number(q.price).toFixed(2) : null, change: q.change != null ? Number(q.change).toFixed(2) : null, changePct: q.changesPercentage != null ? Number(q.changesPercentage).toFixed(2) : null, dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null, dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null, marketCap: q.marketCap, volume: q.volume }; });
+        let vixVal = null;
+        json.forEach(q => {
+          if (q?.symbol === "^VIX") { vixVal = parseFloat(q.price); }
+          else if (q?.symbol) mapped[q.symbol] = { price: q.price != null ? Number(q.price).toFixed(2) : null, change: q.change != null ? Number(q.change).toFixed(2) : null, changePct: q.changesPercentage != null ? Number(q.changesPercentage).toFixed(2) : null, dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null, dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null, marketCap: q.marketCap, volume: q.volume };
+        });
+        if (vixVal) setVix(vixVal);
         setLiveData(prev => {
           const flashes = {};
           Object.keys(mapped).forEach(s => { if (prev[s] && prev[s].price !== mapped[s].price) flashes[s] = true; });
@@ -197,6 +262,12 @@ export default function App() {
           return mapped;
         });
         setLastUpdated(new Date().toLocaleTimeString());
+        // Log portfolio value snapshot to history - computed after mapped is set
+        setPortfolioHistory(prev => {
+          const now = new Date();
+          const timeStr = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+          return [...prev.slice(-47), { time: timeStr, ts: now.getTime(), mapped }];
+        });
       } else setApiError(true);
     } catch { setApiError(true); }
     setLoading(false);
@@ -317,15 +388,43 @@ export default function App() {
     );
   };
 
-  // Sentiment gauge
-  const fearGreedScore = () => {
-    if (!Object.keys(liveData).length) return 50;
-    const avgPct = TICKERS.reduce((s, t) => s + (liveData[t] ? parseFloat(liveData[t].changePct) : 0), 0) / TICKERS.length;
-    return Math.min(100, Math.max(0, 50 + avgPct * 8));
+  // Real market sentiment from VIX
+  const getVixScore = (v) => {
+    if (!v) return 50;
+    if (v < 12) return 85; // Extreme Greed
+    if (v < 15) return 72; // Greed
+    if (v < 20) return 55; // Neutral
+    if (v < 25) return 38; // Fear
+    if (v < 30) return 22; // Extreme Fear
+    return 10;             // Max Fear
   };
-  const fgScore = fearGreedScore();
+  const fgScore = getVixScore(vix);
   const fgLabel = fgScore < 25 ? "Extreme Fear" : fgScore < 40 ? "Fear" : fgScore < 60 ? "Neutral" : fgScore < 75 ? "Greed" : "Extreme Greed";
   const fgColor = fgScore < 25 ? "#ef4444" : fgScore < 40 ? "#f97316" : fgScore < 60 ? "#f59e0b" : fgScore < 75 ? "#84cc16" : "#10b981";
+
+  // Portfolio sentiment from live price changes
+  const portfolioSentimentScore = () => {
+    if (!Object.keys(liveData).length) return 50;
+    const avgPct = TICKERS.reduce((s, t) => s + (liveData[t] ? parseFloat(liveData[t].changePct) : 0), 0) / TICKERS.length;
+    return Math.min(95, Math.max(5, 50 + avgPct * 10));
+  };
+  const portScore = portfolioSentimentScore();
+  const portLabel = portScore < 25 ? "Hurting" : portScore < 40 ? "Under Pressure" : portScore < 60 ? "Holding Steady" : portScore < 75 ? "Looking Good" : "On Fire 🔥";
+  const portColor = portScore < 40 ? "#ef4444" : portScore < 60 ? "#f59e0b" : "#10b981";
+
+  // Build chart data from history snapshots
+  const chartData = portfolioHistory.map(snap => {
+    let total = 0, has = false;
+    TICKERS.forEach(t => {
+      const pos = positions[t];
+      const price = snap.mapped?.[t]?.price;
+      if (pos?.shares && pos?.avgCost && price) {
+        total += parseFloat(price) * parseFloat(pos.shares);
+        has = true;
+      }
+    });
+    return has ? { time: snap.time, value: total } : { time: snap.time, value: null };
+  }).filter(d => d.value != null);
 
   const dcaResult = calcDCA();
   const whatIfResult = calcWhatIf();
@@ -390,7 +489,7 @@ export default function App() {
 
         {/* Summary pills */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6, marginBottom: 14 }}>
-          {[{ label: "Value", value: portfolioValue ? `$${portfolioValue.toFixed(0)}` : "$1,129.59" }, { label: "Positions", value: "7" }, { label: "Stocks", value: "70%" }, { label: "ETFs", value: "30% ✅" }, { label: "Sentiment", value: fgLabel, color: fgColor }].map((item, i) => (
+          {[{ label: "Value", value: portfolioValue ? `$${portfolioValue.toFixed(0)}` : "$1,129.59" }, { label: "Positions", value: "7" }, { label: "Stocks", value: "70%" }, { label: "ETFs", value: "30% ✅" }, { label: `VIX ${vix ? vix.toFixed(1) : "—"}`, value: fgLabel, color: fgColor }].map((item, i) => (
             <div key={i} style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 100, padding: "5px 12px", fontSize: 11, fontWeight: 600 }}>
               <span style={{ opacity: 0.8 }}>{item.label}: </span>
               <span style={{ fontWeight: 800, color: item.color || "white" }}>{item.value}</span>
@@ -612,6 +711,16 @@ export default function App() {
               </div>
             </div>
 
+            {/* Portfolio Line Chart */}
+            <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                <div style={{ fontWeight: 800, fontSize: 15, color: "#333" }}>📈 Portfolio Value — Today</div>
+                {chartData.length > 0 && <div style={{ fontSize: 12, fontWeight: 700, color: "#667eea" }}>{chartData.length} snapshots</div>}
+              </div>
+              <div style={{ fontSize: 12, color: "#aaa", marginBottom: 14 }}>Updates every 15 seconds as prices refresh</div>
+              <MiniLineChart data={chartData} height={90} />
+            </div>
+
             {/* DCA Calculator */}
             <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
               <div style={{ fontWeight: 800, fontSize: 15, color: "#333", marginBottom: 14 }}>💵 DCA Calculator</div>
@@ -684,18 +793,43 @@ export default function App() {
               <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Portfolio Heat Map</div>
               <p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>Size = portfolio weight · Color = today's performance</p>
             </div>
-            {/* Sentiment gauge */}
-            <div style={{ background: "white", borderRadius: 20, padding: "16px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: "#333" }}>😰 Market Sentiment</div>
-                <div style={{ fontSize: 16, fontWeight: 900, color: fgColor }}>{fgLabel}</div>
+            {/* Dual sentiment gauges */}
+            <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#333", marginBottom: 4 }}>📡 Sentiment Comparison</div>
+              <div style={{ fontSize: 12, color: "#888", marginBottom: 16 }}>Real VIX-based market fear vs how your portfolio is actually performing today</div>
+              
+              {/* Market gauge */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>🌍 Market (VIX {vix ? vix.toFixed(1) : "—"})</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: fgColor }}>{fgLabel}</div>
+                </div>
+                <div style={{ background: "linear-gradient(90deg, #ef4444, #f97316, #f59e0b, #84cc16, #10b981)", borderRadius: 100, height: 10, position: "relative" }}>
+                  <div style={{ position: "absolute", top: -5, left: `${fgScore}%`, transform: "translateX(-50%)", width: 20, height: 20, background: "white", borderRadius: "50%", border: `3px solid ${fgColor}`, boxShadow: "0 2px 8px rgba(0,0,0,0.2)", transition: "left 0.8s ease" }} />
+                </div>
               </div>
-              <div style={{ background: `linear-gradient(90deg, #ef4444, #f97316, #f59e0b, #84cc16, #10b981)`, borderRadius: 100, height: 12, position: "relative", overflow: "visible" }}>
-                <div style={{ position: "absolute", top: -4, left: `${fgScore}%`, transform: "translateX(-50%)", width: 20, height: 20, background: "white", borderRadius: "50%", border: `3px solid ${fgColor}`, boxShadow: "0 2px 8px rgba(0,0,0,0.2)", transition: "left 0.8s ease" }} />
+
+              {/* Portfolio gauge */}
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: "#555" }}>💼 Your Portfolio</div>
+                  <div style={{ fontSize: 13, fontWeight: 900, color: portColor }}>{portLabel}</div>
+                </div>
+                <div style={{ background: "linear-gradient(90deg, #ef4444, #f97316, #f59e0b, #84cc16, #10b981)", borderRadius: 100, height: 10, position: "relative" }}>
+                  <div style={{ position: "absolute", top: -5, left: `${portScore}%`, transform: "translateX(-50%)", width: 20, height: 20, background: "white", borderRadius: "50%", border: `3px solid ${portColor}`, boxShadow: "0 2px 8px rgba(0,0,0,0.2)", transition: "left 0.8s ease" }} />
+                </div>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#aaa", fontWeight: 600, marginTop: 6 }}>
+
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#bbb", fontWeight: 600 }}>
                 <span>Extreme Fear</span><span>Fear</span><span>Neutral</span><span>Greed</span><span>Extreme Greed</span>
               </div>
+
+              {/* Insight */}
+              {Object.keys(liveData).length > 0 && (
+                <div style={{ marginTop: 14, background: portScore > fgScore ? "#f0fdf4" : portScore < fgScore - 15 ? "#fef2f2" : "#fefce8", borderRadius: 12, padding: "10px 14px", fontSize: 12, color: portScore > fgScore ? "#065f46" : portScore < fgScore - 15 ? "#991b1b" : "#92400e", lineHeight: 1.6 }}>
+                  {portScore > fgScore + 10 ? "💪 Your portfolio is outperforming market sentiment — your diversification is working." : portScore < fgScore - 10 ? "⚠️ Your portfolio is feeling more pain than the broader market. Check your biggest losers." : "➡️ Your portfolio is moving roughly in line with overall market sentiment today."}
+                </div>
+              )}
             </div>
 
             {/* Heat map tiles */}
@@ -795,6 +929,35 @@ export default function App() {
               <div style={{ fontWeight: 800, fontSize: 13, color: "#92400e" }}>⚡ Coming Up This Week</div>
               <div style={{ fontSize: 13, color: "#78350f", marginTop: 4 }}>NVDA earnings Feb 26 — biggest catalyst of the quarter. Expect volatility.</div>
             </div>
+            {/* Visual mini calendar */}
+            <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontWeight: 800, fontSize: 15, color: "#333", marginBottom: 14 }}>📅 February — May 2026</div>
+              {[
+                { month: "Feb 2026", days: 28, start: 6, events: { 26: ["📊 NVDA", "⚛️ CEG"], 28: ["💵 PCE"] } },
+                { month: "Mar 2026", days: 31, start: 0, events: { 4: ["🔥 AVGO"], 7: ["💼 NFP"], 19: ["🏦 FOMC"] } },
+                { month: "Apr 2026", days: 30, start: 2, events: { 10: ["📈 CPI"], 30: ["☁️ MSFT"] } },
+                { month: "May 2026", days: 31, start: 4, events: { 7: ["💊 MCK", "🏦 FOMC"] } },
+              ].map((cal, ci) => (
+                <div key={ci} style={{ marginBottom: ci < 3 ? 20 : 0 }}>
+                  <div style={{ fontWeight: 700, fontSize: 12, color: "#667eea", marginBottom: 8, letterSpacing: 1 }}>{cal.month}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
+                    {["Su","Mo","Tu","We","Th","Fr","Sa"].map(d => <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: "#bbb", padding: "2px 0" }}>{d}</div>)}
+                    {Array.from({ length: cal.start }, (_, i) => <div key={`empty-${i}`} />)}
+                    {Array.from({ length: cal.days }, (_, i) => {
+                      const day = i + 1;
+                      const hasEvent = cal.events[day];
+                      return (
+                        <div key={day} style={{ textAlign: "center", padding: "4px 2px", borderRadius: 6, background: hasEvent ? "linear-gradient(135deg, #667eea, #764ba2)" : "transparent", cursor: hasEvent ? "pointer" : "default", position: "relative" }} title={hasEvent ? hasEvent.join(", ") : ""}>
+                          <div style={{ fontSize: 10, fontWeight: hasEvent ? 900 : 400, color: hasEvent ? "white" : "#555" }}>{day}</div>
+                          {hasEvent && <div style={{ fontSize: 7, color: "rgba(255,255,255,0.85)", lineHeight: 1.3, marginTop: 1 }}>{hasEvent[0]}</div>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+
             <div style={{ display: "grid", gap: 10 }}>
               {economicCalendar.map((item, i) => (
                 <div key={i} style={{ background: "white", borderRadius: 16, padding: "14px 16px", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", borderLeft: `4px solid ${item.type === "earnings" ? "#667eea" : item.impact === "HIGH" ? "#ef4444" : "#f59e0b"}` }}>
@@ -855,12 +1018,30 @@ export default function App() {
                       <div style={{ fontSize: 9, color: "#0891b2", fontWeight: 700, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>Free Cash Flow</div>
                       <div style={{ fontSize: 13, color: "#444", fontWeight: 600 }}>{d.fcf}</div>
                     </div>
-                    {/* Technical signals mini */}
+                    {/* Technical signals with tooltip */}
                     <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-                      {[{ label: `RSI ${d.rsi}`, color: d.rsi < 30 ? "#ef4444" : d.rsi > 70 ? "#f59e0b" : "#10b981" }, { label: d.aboveMa50 ? "▲ 50MA" : "▼ 50MA", color: d.aboveMa50 ? "#10b981" : "#f59e0b" }, { label: d.aboveMa200 ? "▲ 200MA" : "▼ 200MA", color: d.aboveMa200 ? "#10b981" : "#ef4444" }].map((s, i) => (
-                        <div key={i} style={{ background: `${s.color}15`, borderRadius: 100, padding: "2px 8px", fontSize: 10, fontWeight: 700, color: s.color }}>{s.label}</div>
+                      {[
+                        (() => { const ctx = d.rsi < 30 ? technicalContext.rsi.oversold : d.rsi > 70 ? technicalContext.rsi.overbought : technicalContext.rsi.neutral; return { label: `RSI ${d.rsi} — tap for context`, color: ctx.color, ctx }; })(),
+                        (() => { const ctx = d.aboveMa50 ? technicalContext.ma50.above : technicalContext.ma50.below; return { label: `${d.aboveMa50 ? "▲" : "▼"} 50MA — tap for context`, color: ctx.color, ctx }; })(),
+                        (() => { const ctx = d.aboveMa200 ? technicalContext.ma200.above : technicalContext.ma200.below; return { label: `${d.aboveMa200 ? "▲" : "▼"} 200MA — tap for context`, color: ctx.color, ctx }; })(),
+                      ].map((s, i) => (
+                        <div key={i} onClick={() => setTooltip(tooltip?.label === s.ctx.label && tooltip?.ticker === ticker ? null : { ...s.ctx, ticker })} style={{ background: `${s.color}15`, borderRadius: 100, padding: "4px 10px", fontSize: 10, fontWeight: 700, color: s.color, cursor: "pointer", border: `1px solid ${s.color}30`, transition: "all 0.15s" }}>{s.label} ⓘ</div>
                       ))}
                     </div>
+                    {/* Tooltip panel */}
+                    {tooltip?.ticker === ticker && (
+                      <div style={{ marginTop: 10, background: `${tooltip.color}10`, border: `2px solid ${tooltip.color}30`, borderRadius: 14, padding: "14px 16px", animation: "slideIn 0.2s ease" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                          <div style={{ fontSize: 13, fontWeight: 900, color: tooltip.color }}>{tooltip.icon} {tooltip.label}</div>
+                          <button onClick={() => setTooltip(null)} style={{ background: "none", border: "none", color: "#bbb", cursor: "pointer", fontSize: 16, lineHeight: 1 }}>×</button>
+                        </div>
+                        <div style={{ fontSize: 13, color: "#444", lineHeight: 1.7, marginBottom: 10 }}>{tooltip.meaning}</div>
+                        <div style={{ background: "rgba(255,255,255,0.7)", borderRadius: 10, padding: "10px 12px" }}>
+                          <div style={{ fontSize: 10, fontWeight: 700, color: tooltip.color, letterSpacing: 1, textTransform: "uppercase", marginBottom: 4 }}>What This Means For You</div>
+                          <div style={{ fontSize: 12.5, color: "#555", lineHeight: 1.6 }}>{tooltip.action}</div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               );
