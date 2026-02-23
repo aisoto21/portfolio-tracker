@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 
-// Uses our own Vercel serverless proxy — no CORS issues!
+const API_KEY = "RRTdfDn0imGz8UYiCfvHBDrEkFDvnYhE";
 const TICKERS = ["NVDA", "AVGO", "MSFT", "CEG", "VTI", "VXUS", "MCK"];
-const NAMES = ["Beautiful", "Money Moves", "Boss Investor", "Dream Team", "Future Millionaire"];
+const NAMES = ["Beautiful", "Money Moves", "Boss Investor", "Dream Team", "Future Millionaire", "Sexy"];
 
 // CORRECTED 30/70 SPLIT
 const staticData = {
@@ -285,26 +285,31 @@ export default function App() {
     setApiError(false);
     try {
       const symbols = TICKERS.join(",");
-      // Calls our own Vercel serverless function — no CORS!
-      const res = await fetch(`/api/quote?symbols=${symbols}`);
+      const url = `https://financialmodelingprep.com/api/v3/quote/${symbols}?apikey=${API_KEY}`;
+      const res = await fetch(url, { method: "GET", headers: { "Accept": "application/json" }, mode: "cors" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       if (Array.isArray(json) && json.length > 0) {
         const mapped = {};
         json.forEach(q => {
-          mapped[q.symbol] = {
-            price: q.price?.toFixed(2),
-            change: q.change?.toFixed(2),
-            changePct: q.changesPercentage?.toFixed(2),
-            dayHigh: q.dayHigh?.toFixed(2),
-            dayLow: q.dayLow?.toFixed(2),
-            marketCap: q.marketCap,
-            volume: q.volume,
-          };
+          if (q && q.symbol) {
+            mapped[q.symbol] = {
+              price: q.price != null ? Number(q.price).toFixed(2) : null,
+              change: q.change != null ? Number(q.change).toFixed(2) : null,
+              changePct: q.changesPercentage != null ? Number(q.changesPercentage).toFixed(2) : null,
+              dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null,
+              dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null,
+              marketCap: q.marketCap,
+              volume: q.volume,
+            };
+          }
         });
-        setLiveData(mapped);
-        setLastUpdated(new Date().toLocaleTimeString());
+        if (Object.keys(mapped).length > 0) {
+          setLiveData(mapped);
+          setLastUpdated(new Date().toLocaleTimeString());
+        } else { setApiError(true); }
       } else { setApiError(true); }
-    } catch { setApiError(true); }
+    } catch (err) { console.error("FMP fetch error:", err); setApiError(true); }
     setLoading(false);
   }, []);
 
