@@ -4,52 +4,6 @@ const TICKERS = ["NVDA", "AVGO", "MSFT", "CEG", "VTI", "VXUS", "MCK"];
 const NAMES = ["Beautiful", "Money Moves", "Boss Investor", "Dream Team", "Future Millionaire"];
 
 const staticData = {
-// Personalized signal-based recommendations for each stock
-const signalRecs = {
-  NVDA: {
-    below50:  { level: "caution", title: "NVDA slipped below its 50-day MA", body: "Short-term momentum has weakened. This is normal around earnings volatility. Your thesis (CUDA moat, AI infrastructure) is multi-year — don't let a 50MA dip shake you out. Watch for a reclaim above $130 on volume as a re-entry signal.", action: "🟡 Hold. Add on confirmed bounce if conviction stays at 9/10." },
-    below200: { level: "warning", title: "NVDA is below its 200-day MA", body: "This is a serious technical warning — the long-term trend has turned negative. Ask yourself: has the AI infrastructure thesis fundamentally changed? If CUDA moat and data center demand are still intact, this may be a rare deep-value entry. If competition from AMD/custom silicon is accelerating faster than expected, reassess.", action: "🔴 Review thesis at next quarterly. Don't add until it reclaims 200MA." },
-    rsiOversold: { level: "opportunity", title: "NVDA is technically oversold (RSI < 30)", body: "RSI below 30 means the stock has been sold off hard — often emotion-driven. For a high-conviction name like NVDA, oversold readings have historically been excellent buying opportunities. Wait for one green day to confirm the selling is done before adding.", action: "🟢 Strong buy signal for long-term investors. Consider adding if thesis intact." },
-    rsiOverbought: { level: "caution", title: "NVDA is overbought (RSI > 70)", body: "The stock has run quickly and momentum traders may take profits. This doesn't mean sell — it means don't chase. If you've been waiting to add, be patient for a pullback to the 50MA area.", action: "🟡 Don't add at these levels. Wait for a 5–10% pullback." },
-  },
-  AVGO: {
-    below50:  { level: "caution", title: "AVGO slipped below its 50-day MA", body: "Your highest-conviction name is showing short-term weakness. Check if there's any fundamental news — VMware integration issues, hyperscaler order softness, or macro pressure. If nothing fundamental has changed, this is likely noise.", action: "🟡 Hold. This is your 10/10 conviction name — don't panic sell on technicals alone." },
-    below200: { level: "warning", title: "AVGO is below its 200-day MA", body: "This is unusual for AVGO given its strong FCF and analyst consensus. Investigate immediately — has a major hyperscaler customer signaled reduced AI capex? Has the VMware integration hit a wall? If fundamentals are intact, this is a rare buying opportunity in one of your best positions.", action: "🔴 Dig into the news. If no fundamental change, this may be your best buying opportunity in years." },
-    rsiOversold: { level: "opportunity", title: "AVGO is technically oversold (RSI < 30)", body: "Your strongest conviction name is deeply oversold. With a PEG of 0.85 and zero sell ratings, an oversold AVGO is historically a gift. Make sure no fundamental news drove the selloff before adding.", action: "🟢 Highest priority add if thesis intact. This is exactly the setup you want for a 10/10 conviction name." },
-    rsiOverbought: { level: "caution", title: "AVGO is overbought (RSI > 70)", body: "AVGO has had a strong run. With ~50% gain in 2025 already, profit-taking is natural. Don't add here — let it consolidate.", action: "🟡 Hold existing position. Don't add until RSI cools below 60." },
-  },
-  MSFT: {
-    below50:  { level: "caution", title: "MSFT slipped below its 50-day MA", body: "Microsoft underperforming short-term. Given it's already lagged the market with Azure growing 39%, this could be more multiple compression. Watch whether Azure growth is accelerating or decelerating in next earnings.", action: "🟡 Hold. MSFT at a discount to its growth rate is the exact reason you own it." },
-    below200: { level: "warning", title: "MSFT is below its 200-day MA", body: "Rare for Microsoft to be below the 200MA. If this happens, it likely means broad market stress or a specific Azure/Copilot growth scare. With 98% analyst buy ratings and $70B+ FCF, a 200MA break is almost certainly an opportunity.", action: "🔴 Investigate catalyst. If no fundamental change, consider this a generational add opportunity." },
-    rsiOversold: { level: "opportunity", title: "MSFT is technically oversold (RSI < 30)", body: "Microsoft oversold is rare and usually doesn't last long. Institutional buyers tend to step in aggressively at these levels on a name this high quality.", action: "🟢 Strong add signal. MSFT oversold is historically a very profitable entry." },
-    rsiOverbought: { level: "caution", title: "MSFT is overbought (RSI > 70)", body: "MSFT has been running. Given it's already lagged peers, an overbought reading means it's catching up — which is healthy. But don't chase. Let it come back to the 50MA if you want to add.", action: "🟡 Don't add here. Let it consolidate." },
-  },
-  CEG: {
-    below50:  { level: "caution", title: "CEG is below its 50-day MA", body: "CEG has been under pressure from policy uncertainty — but you already know this and bought it as a thesis play, not a momentum trade. Nuclear PPA deals are accelerating and the CyrusOne 380MW deal is confirmed. Short-term MA weakness does NOT invalidate the thesis.", action: "🟡 Hold or consider adding. The thesis is intact — policy fear ≠ fundamental change." },
-    below200: { level: "opportunity", title: "CEG is below its 200-day MA — but your thesis says buy", body: "CEG sitting below its 200MA is the exact setup you identified when you bought it. Down 24% from highs on policy noise, not fundamentals. 53% analyst upside, zero sells, new data center PPAs being signed. This technical weakness is the opportunity, not the warning.", action: "🟢 This is why you own CEG. Consider adding if you have capital — you're buying the exact discount you wanted." },
-    rsiOversold: { level: "opportunity", title: "CEG is deeply oversold (RSI < 30)", body: "RSI below 30 on an already-beaten-down stock with strong fundamentals is a high-probability setup. Nuclear renaissance thesis + AI power demand + oversold = strong buy signal for patient investors.", action: "🟢 High-conviction add opportunity. This is CEG at maximum fear — historically when the best returns are made." },
-    rsiOverbought: { level: "caution", title: "CEG is overbought (RSI > 70)", body: "CEG has recovered and is running hot. Good news — your thesis is playing out. But don't add more at overbought levels. Let it consolidate and see if it can hold the gains.", action: "🟡 Hold. Don't chase. Let RSI cool before adding more." },
-  },
-  VTI: {
-    below50:  { level: "caution", title: "VTI is below its 50-day MA", body: "The entire U.S. market is in short-term weakness. This affects every stock in your portfolio. In broad market pullbacks, VTI historically recovers — this is exactly when your consistent DCA strategy pays off most.", action: "🟡 Keep DCA-ing. Broad market dips are when you accumulate the most shares per dollar." },
-    below200: { level: "warning", title: "VTI is below its 200-day MA — potential bear market signal", body: "This is a rare and serious signal for a total market ETF. VTI below its 200MA has historically preceded extended drawdowns. This doesn't mean sell — it means reassess your risk tolerance and make sure you're not over-leveraged or overexposed to high-beta names like NVDA and AVGO.", action: "🔴 Don't panic sell. But review your individual stock positions for thesis changes. Increase cash DCA frequency." },
-    rsiOversold: { level: "opportunity", title: "The entire U.S. market is oversold", body: "When VTI hits RSI below 30, it means broad capitulation. History shows this is almost always a buying opportunity on a 12-month horizon. This is the moment your consistent investing strategy was built for.", action: "🟢 If you have cash, this is a generational add opportunity for VTI. Keep DCA-ing." },
-    rsiOverbought: { level: "caution", title: "VTI is overbought — broad market running hot", body: "The entire market has run quickly. Not a sell signal, but a signal to be patient with new capital deployment. Let the market breathe.", action: "🟡 Continue DCA but don't lump sum add at these levels." },
-  },
-  VXUS: {
-    below50:  { level: "caution", title: "VXUS is below its 50-day MA", body: "International markets are showing short-term weakness. Given VXUS is already outperforming U.S. equities in 2026, a pullback to the 50MA is healthy consolidation.", action: "🟡 Hold. International outperformance thesis is intact — this is normal consolidation." },
-    below200: { level: "warning", title: "VXUS is below its 200-day MA", body: "International markets in long-term downtrend. Check if USD has strengthened significantly (dollar strength hurts VXUS) or if a specific geopolitical event is driving weakness. Your diversification thesis depends on VXUS acting as a hedge — if it's breaking down with U.S. markets, the hedge is less effective.", action: "🔴 Review the diversification thesis. If USD strength is the driver, this may persist. Consider reducing position." },
-    rsiOversold: { level: "opportunity", title: "International markets are oversold", body: "VXUS oversold while your thesis says international is outperforming in 2026 is a disconnect — likely a short-term shock. Your 2.8% dividend yield provides a cushion while waiting for recovery.", action: "🟢 Add opportunity. High yield + oversold + outperformance thesis = strong case for adding." },
-    rsiOverbought: { level: "caution", title: "VXUS is overbought", body: "International markets have run. Given the 2026 rotation into international is well-documented, some profit-taking is natural here.", action: "🟡 Hold. Don't add at overbought levels — let it consolidate." },
-  },
-  MCK: {
-    below50:  { level: "caution", title: "MCK slipped below its 50-day MA", body: "After a 55% run over the past year, MCK pulling back to the 50MA is completely normal and healthy. The pharma distribution business hasn't changed — aging population and drug volume trends are multi-decade.", action: "🟡 Hold. A 50MA test after a 55% run is textbook healthy consolidation." },
-    below200: { level: "warning", title: "MCK is below its 200-day MA", body: "Unusual given MCK's strong performance. Check for drug pricing regulation news, Amazon pharmacy competitive threats, or broader healthcare sector rotation. With 80%+ ROE and $4B+ FCF, fundamentals remain strong unless regulation is the driver.", action: "🔴 Investigate catalyst. Drug pricing legislation would be a genuine thesis change. Amazon threat is long-term but worth monitoring." },
-    rsiOversold: { level: "opportunity", title: "MCK is oversold (RSI < 30)", body: "A healthcare compounder with 80%+ ROE hitting oversold is typically a strong buying opportunity. Institutional buyers tend to step in on quality healthcare names at these levels.", action: "🟢 Add signal. MCK oversold has historically been a profitable entry for patient investors." },
-    rsiOverbought: { level: "caution", title: "MCK is overbought after a strong run (RSI > 70)", body: "After gaining 55% in a year, overbought readings for MCK just mean it's extended. This is a 3–5 year hold — don't overthink short-term RSI.", action: "🟡 Hold. Don't add at overbought levels but don't sell either." },
-  },
-};
-
   NVDA: { company: "Nvidia Corporation", sector: "Technology / Semiconductors", category: "Aggressive Growth", allocation: 20, dollarAmount: "$225.92", approxShares: "~1.19", analystTarget: 253.88, week52High: 153.13, week52Low: 86.00, buySell: "57 Buy, 7 Hold, 1 Sell", consensus: "Strong Buy", convictionScore: 9, conviction: "9/10", recentPerformance: "Volatile post-DeepSeek shock", upcomingCatalyst: "⚡ Earnings Feb 25", timeHorizon: "3–5+ years", bucket: "Aggressive", dividendYield: "~0.03%", expenseRatio: "N/A", rothOverlap: "Indirect via QQQ", aiAngle: "GPU / general AI infrastructure", macroTailwinds: "AI data center demand, CUDA ecosystem moat", whyWeOwnIt: "AI infrastructure still in early innings. CUDA moat competitors cannot replicate in 2–3 years.", whyNotAlternative: "N/A", riskFactors: "High valuation, Taiwan supply chain risk", entryPointNote: "Conviction buy long term", nextAddPriority: "Hold and add on dips", watchlistConnection: "N/A", gradient: "linear-gradient(135deg, #76b900, #a8e063)", light: "#f0ffe0", accent: "#76b900", tag: "🟢 Aggressive Growth", emoji: "⚡", peRatio: "~31x", pegRatio: "~0.9", evEbitda: "~35x", grossMargin: "~75%", operatingMargin: "~55%", roe: "~115%", debtEquity: "~0.4x", fcf: "Growing strongly — $26B+ annually", revenueGrowth: "~122% YoY", rsi: 48, aboveMa50: false, aboveMa200: true, earningsDate: "Feb 26, 2025", earningsEst: "$0.84 EPS", correlation: { AVGO: 0.82, MSFT: 0.78, CEG: 0.45, VTI: 0.72, VXUS: 0.58, MCK: 0.31 } },
   AVGO: { company: "Broadcom Inc.", sector: "Technology / Semiconductors", category: "Aggressive-Moderate Growth", allocation: 16, dollarAmount: "$180.73", approxShares: "~0.52", analystTarget: 475.00, week52High: 251.88, week52Low: 122.76, buySell: "46 Buy, 2 Hold, 0 Sell", consensus: "Strong Buy 9.5/10", convictionScore: 10, conviction: "10/10 ⭐", recentPerformance: "~50% gain in 2025", upcomingCatalyst: "📅 Earnings Mar 4", timeHorizon: "3–5+ years", bucket: "Aggressive-Moderate", dividendYield: "~1.1%", expenseRatio: "N/A", rothOverlap: "Indirect via QQQ", aiAngle: "Custom AI silicon + networking for hyperscalers", macroTailwinds: "Custom AI chip demand, VMware FCF", whyWeOwnIt: "Builds chips hyperscalers use to reduce NVDA dependence — NVDA's biggest threat is AVGO's biggest opportunity.", whyNotAlternative: "Not CAT — ran 32% YTD, cyclical.", riskFactors: "Semiconductor cyclicality, VMware integration risk", entryPointNote: "Conviction buy — strongest analyst consensus", nextAddPriority: "Hold — highest conviction", watchlistConnection: "N/A", gradient: "linear-gradient(135deg, #cc0000, #ff6b6b)", light: "#fff0f0", accent: "#cc0000", tag: "🔴 Aggressive-Moderate", emoji: "🔥", peRatio: "~34x", pegRatio: "~0.85", evEbitda: "~22x", grossMargin: "~64%", operatingMargin: "~37%", roe: "~60%+", debtEquity: "~1.8x", fcf: "Strong — $19B+ annually", revenueGrowth: "~51% YoY", rsi: 55, aboveMa50: true, aboveMa200: true, earningsDate: "Mar 6, 2025", earningsEst: "$1.49 EPS", correlation: { NVDA: 0.82, MSFT: 0.75, CEG: 0.42, VTI: 0.68, VXUS: 0.55, MCK: 0.28 } },
   MSFT: { company: "Microsoft Corporation", sector: "Technology / Enterprise Software", category: "Moderate-Growth", allocation: 15, dollarAmount: "$169.44", approxShares: "~0.43", analystTarget: 628.98, week52High: 468.35, week52Low: 385.58, buySell: "32 Buy, 2 Hold, 0 Sell", consensus: "Strong Buy 8.5/10", convictionScore: 9.5, conviction: "9.5/10", recentPerformance: "+16% YTD — underperformed past year", upcomingCatalyst: "✅ None imminent", timeHorizon: "3–5+ years", bucket: "Moderate-Growth", dividendYield: "~0.7%", expenseRatio: "N/A", rothOverlap: "None", aiAngle: "Enterprise AI via Copilot — 70% of Fortune 500", macroTailwinds: "Azure +39% YoY, Copilot adoption", whyWeOwnIt: "Great business punished irrationally. Azure +39%, 98% analysts say Buy.", whyNotAlternative: "Not GOOGL — already ran 65% YTD.", riskFactors: "Three tech names move together on bad days", entryPointNote: "Conviction buy — buying the lag", nextAddPriority: "Hold and monitor quarterly", watchlistConnection: "GOOGL as future complement", gradient: "linear-gradient(135deg, #00a4ef, #50d9ff)", light: "#e8f8ff", accent: "#00a4ef", tag: "🔵 Moderate-Growth", emoji: "☁️", peRatio: "~28x", pegRatio: "~1.4", evEbitda: "~22x", grossMargin: "~70%", operatingMargin: "~44%", roe: "~38%", debtEquity: "~0.35x", fcf: "Exceptional — $70B+ annually", revenueGrowth: "~17% YoY", rsi: 52, aboveMa50: true, aboveMa200: true, earningsDate: "Apr 30, 2025", earningsEst: "$3.22 EPS", correlation: { NVDA: 0.78, AVGO: 0.75, CEG: 0.40, VTI: 0.80, VXUS: 0.65, MCK: 0.35 } },
@@ -298,22 +252,7 @@ export default function App() {
         let vixVal = null;
         json.forEach(q => {
           if (q?.symbol === "^VIX") { vixVal = parseFloat(q.price); }
-          else if (q?.symbol) mapped[q.symbol] = {
-            price: q.price != null ? Number(q.price).toFixed(2) : null,
-            change: q.change != null ? Number(q.change).toFixed(2) : null,
-            changePct: q.changesPercentage != null ? Number(q.changesPercentage).toFixed(2) : null,
-            dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null,
-            dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null,
-            marketCap: q.marketCap, volume: q.volume,
-            // Live calculated technicals
-            rsi: q.rsi,
-            ma50: q.ma50,
-            ma200: q.ma200,
-            aboveMa50: q.aboveMa50,
-            aboveMa200: q.aboveMa200,
-            week52High: q.week52High,
-            week52Low: q.week52Low,
-          };
+          else if (q?.symbol) mapped[q.symbol] = { price: q.price != null ? Number(q.price).toFixed(2) : null, change: q.change != null ? Number(q.change).toFixed(2) : null, changePct: q.changesPercentage != null ? Number(q.changesPercentage).toFixed(2) : null, dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null, dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null, marketCap: q.marketCap, volume: q.volume };
         });
         if (vixVal) setVix(vixVal);
         setLiveData(prev => {
@@ -372,31 +311,10 @@ export default function App() {
 
   const fmtMktCap = n => { if (!n) return "N/A"; if (n >= 1e12) return `$${(n/1e12).toFixed(2)}T`; if (n >= 1e9) return `$${(n/1e9).toFixed(1)}B`; return `$${n}`; };
 
-  // Get live technical value — falls back to static hardcoded data if API hasn't loaded yet
-  const getTech = (ticker, field) => {
-    const ld = liveData[ticker];
-    if (ld && ld[field] !== null && ld[field] !== undefined) return ld[field];
-    return staticData[ticker][field]; // fallback to hardcoded
-  };
-
   const totals = totalStats();
   const portfolioValue = livePortfolioValue();
   const todayPct = todayPortfolioPct();
   const data = staticData[selected];
-
-  // Get active signal recommendations for selected stock
-  const getActiveRecs = (ticker) => {
-    const d = staticData[ticker];
-    const recs = signalRecs[ticker];
-    if (!recs) return [];
-    const active = [];
-    if (d.rsi < 30) active.push(recs.rsiOversold);
-    if (d.rsi > 70) active.push(recs.rsiOverbought);
-    if (!d.aboveMa50) active.push(recs.below50);
-    if (!d.aboveMa200) active.push(recs.below200);
-    return active;
-  };
-  const activeRecs = getActiveRecs(selected);
   const live = liveData[selected];
 
   // DCA Calculator
@@ -662,15 +580,14 @@ export default function App() {
                   </div>
                   {/* 52-week progress bar */}
                   <div style={{ marginBottom: 10 }}>
-                    {(() => { const low = live.week52Low || data.week52Low; const high = live.week52High || data.week52High; return (
-                    <><div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#aaa", fontWeight: 600, marginBottom: 4 }}>
-                      <span>52W Low: ${low}</span>
+                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#aaa", fontWeight: 600, marginBottom: 4 }}>
+                      <span>52W Low: ${data.week52Low}</span>
                       <span style={{ color: data.accent, fontWeight: 800 }}>Current: ${live.price}</span>
-                      <span>52W High: ${high}</span>
+                      <span>52W High: ${data.week52High}</span>
                     </div>
                     <div style={{ background: "#f0f0f0", borderRadius: 100, height: 8, overflow: "hidden", position: "relative" }}>
-                      <div style={{ width: `${Math.min(100, Math.max(0, ((parseFloat(live.price) - low) / (high - low)) * 100))}%`, height: "100%", background: data.gradient, borderRadius: 100, transition: "width 0.8s ease" }} />
-                    </div></> ); })()}
+                      <div style={{ width: `${Math.min(100, Math.max(0, ((parseFloat(live.price) - data.week52Low) / (data.week52High - data.week52Low)) * 100))}%`, height: "100%", background: data.gradient, borderRadius: 100, transition: "width 0.8s ease" }} />
+                    </div>
                   </div>
                   {/* Analyst target bar */}
                   {data.analystTarget && (
@@ -687,68 +604,18 @@ export default function App() {
                 </div>
               )}
 
-              {/* Technical signals — live calculated */}
-              {(() => {
-                const rsi = getTech(selected, "rsi");
-                const aboveMa50 = getTech(selected, "aboveMa50");
-                const aboveMa200 = getTech(selected, "aboveMa200");
-                const ma50 = getTech(selected, "ma50");
-                const ma200 = getTech(selected, "ma200");
-                const liveRsi = live?.rsi != null;
-
-                // Generate smart recommendation
-                const warnings = [];
-                if (rsi !== null && rsi < 30) warnings.push({ type: "opportunity", msg: `RSI at ${rsi} — oversold territory. Historically a buying opportunity. Consider adding on the next green day.` });
-                if (rsi !== null && rsi > 70) warnings.push({ type: "caution", msg: `RSI at ${rsi} — overbought. Avoid chasing here. Wait for a pullback before adding.` });
-                if (aboveMa50 === false) warnings.push({ type: "caution", msg: `Below 50-day MA${ma50 ? ` ($${ma50})` : ""}. Short-term momentum is negative. Watch for a reclaim of the 50MA as a re-entry signal.` });
-                if (aboveMa200 === false) warnings.push({ type: "warning", msg: `Below 200-day MA${ma200 ? ` ($${ma200})` : ""}. Long-term trend is negative. Re-examine your thesis — if fundamentals are intact, this may be a deep value entry. If thesis has changed, consider reducing.` });
-                if (warnings.length === 0 && aboveMa50 && aboveMa200 && rsi > 30 && rsi < 70) warnings.push({ type: "healthy", msg: `All signals healthy — above both moving averages, RSI in neutral zone. No action needed.` });
-
-                return (
-                  <div style={{ borderBottom: "1px solid #f5f5f5" }}>
-                    <div style={{ padding: "12px 18px", background: "#fafafa", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginRight: 4 }}>📡 Technicals {liveRsi ? "🟢 Live" : "📋 Est"}:</div>
-                      {[
-                        { label: rsi !== null ? `RSI ${rsi}` : "RSI —", color: !rsi ? "#aaa" : rsi < 30 ? "#ef4444" : rsi > 70 ? "#f59e0b" : "#10b981" },
-                        { label: aboveMa50 === null ? "50MA —" : aboveMa50 ? "Above 50MA ✅" : "Below 50MA ⚠️", color: aboveMa50 === null ? "#aaa" : aboveMa50 ? "#10b981" : "#f59e0b" },
-                        { label: aboveMa200 === null ? "200MA —" : aboveMa200 ? "Above 200MA ✅" : "Below 200MA ❌", color: aboveMa200 === null ? "#aaa" : aboveMa200 ? "#10b981" : "#ef4444" },
-                        { label: `Earnings: ${data.earningsDate}`, color: "#6366f1" },
-                      ].map((s, i) => (
-                        <div key={i} style={{ background: `${s.color}15`, border: `1px solid ${s.color}30`, borderRadius: 100, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: s.color }}>{s.label}</div>
-                      ))}
-                    </div>
-                    {/* Smart recommendation */}
-                    {warnings.map((w, i) => (
-                      <div key={i} style={{ margin: "0 12px 8px", borderRadius: 12, padding: "11px 14px", background: w.type === "healthy" ? "#f0fdf4" : w.type === "opportunity" ? "#eff6ff" : w.type === "caution" ? "#fffbeb" : "#fef2f2", border: `1.5px solid ${w.type === "healthy" ? "#86efac" : w.type === "opportunity" ? "#93c5fd" : w.type === "caution" ? "#fcd34d" : "#fca5a5"}`, display: "flex", gap: 10, alignItems: "flex-start" }}>
-                        <span style={{ fontSize: 16, flexShrink: 0 }}>{w.type === "healthy" ? "✅" : w.type === "opportunity" ? "💡" : w.type === "caution" ? "⚠️" : "🔴"}</span>
-                        <div>
-                          <div style={{ fontSize: 11, fontWeight: 800, color: w.type === "healthy" ? "#065f46" : w.type === "opportunity" ? "#1d4ed8" : w.type === "caution" ? "#92400e" : "#991b1b", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 3 }}>{w.type === "healthy" ? "All Clear" : w.type === "opportunity" ? "Potential Opportunity" : w.type === "caution" ? "Proceed With Caution" : "Review Your Position"}</div>
-                          <div style={{ fontSize: 12.5, color: "#444", lineHeight: 1.6 }}>{w.msg}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                );
-              })()}
-
-              {/* Signal Recommendations */}
-              {activeRecs.length > 0 && (
-                <div style={{ padding: "12px 14px", borderBottom: "1px solid #f0f0f0" }}>
-                  {activeRecs.map((rec, i) => {
-                    const bgColor = rec.level === "opportunity" ? "#f0fdf4" : rec.level === "warning" ? "#fef2f2" : "#fffbeb";
-                    const borderCol = rec.level === "opportunity" ? "#10b981" : rec.level === "warning" ? "#ef4444" : "#f59e0b";
-                    const titleCol = rec.level === "opportunity" ? "#065f46" : rec.level === "warning" ? "#991b1b" : "#92400e";
-                    const icon = rec.level === "opportunity" ? "💡" : rec.level === "warning" ? "🚨" : "⚠️";
-                    return (
-                      <div key={i} style={{ background: bgColor, border: `2px solid ${borderCol}30`, borderLeft: `4px solid ${borderCol}`, borderRadius: 14, padding: "14px 16px", marginBottom: i < activeRecs.length - 1 ? 10 : 0 }}>
-                        <div style={{ fontSize: 13, fontWeight: 900, color: titleCol, marginBottom: 8 }}>{icon} {rec.title}</div>
-                        <div style={{ fontSize: 13, color: "#444", lineHeight: 1.7, marginBottom: 10 }}>{rec.body}</div>
-                        <div style={{ background: "rgba(255,255,255,0.8)", borderRadius: 10, padding: "8px 12px", fontSize: 12.5, fontWeight: 700, color: titleCol }}>{rec.action}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+              {/* Technical signals */}
+              <div style={{ padding: "12px 18px", borderBottom: "1px solid #f5f5f5", background: "#fafafa", display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginRight: 4, paddingTop: 2 }}>📡 Technicals:</div>
+                {[
+                  { label: `RSI ${data.rsi}`, ok: data.rsi > 30 && data.rsi < 70, warn: data.rsi >= 70, color: data.rsi < 30 ? "#ef4444" : data.rsi > 70 ? "#f59e0b" : "#10b981" },
+                  { label: data.aboveMa50 ? "Above 50MA ✅" : "Below 50MA ⚠️", color: data.aboveMa50 ? "#10b981" : "#f59e0b" },
+                  { label: data.aboveMa200 ? "Above 200MA ✅" : "Below 200MA ❌", color: data.aboveMa200 ? "#10b981" : "#ef4444" },
+                  { label: `Earnings: ${data.earningsDate}`, color: "#6366f1" },
+                ].map((s, i) => (
+                  <div key={i} style={{ background: `${s.color}15`, border: `1px solid ${s.color}30`, borderRadius: 100, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: s.color }}>{s.label}</div>
+                ))}
+              </div>
 
               {/* Field groups */}
               <div style={{ padding: 12 }}>
