@@ -489,10 +489,12 @@ export default function App() {
 
         {/* Summary pills */}
         <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6, marginBottom: 14 }}>
-          {[{ label: "Value", value: portfolioValue ? `$${portfolioValue.toFixed(0)}` : "$1,129.59" }, { label: "Positions", value: "7" }, { label: "Stocks", value: "70%" }, { label: "ETFs", value: "30% ✅" }, { label: `VIX ${vix ? vix.toFixed(1) : "—"}`, value: fgLabel, color: fgColor }].map((item, i) => (
-            <div key={i} style={{ background: "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 100, padding: "5px 12px", fontSize: 11, fontWeight: 600 }}>
-              <span style={{ opacity: 0.8 }}>{item.label}: </span>
-              <span style={{ fontWeight: 800, color: item.color || "white" }}>{item.value}</span>
+          {[{ label: "Value", value: portfolioValue ? `$${portfolioValue.toFixed(0)}` : "$1,129.59" }, { label: "Positions", value: "7" }, { label: "Stocks", value: "70%" }, { label: "ETFs", value: "30% ✅" }, { label: `VIX ${vix ? vix.toFixed(1) : "—"} · ${fgLabel}`, value: "", vixPill: true, vixColor: fgColor }].map((item, i) => (
+            <div key={i} style={{ background: item.vixPill ? item.vixColor : "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 100, padding: "5px 12px", fontSize: 11, fontWeight: 700, boxShadow: item.vixPill ? `0 2px 12px ${item.vixColor}60` : "none" }}>
+              {item.vixPill
+                ? <span style={{ color: "white", fontWeight: 800 }}>{item.label}</span>
+                : <><span style={{ opacity: 0.8 }}>{item.label}: </span><span style={{ fontWeight: 800, color: item.color || "white" }}>{item.value}</span></>
+              }
             </div>
           ))}
         </div>
