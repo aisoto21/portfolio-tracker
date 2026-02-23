@@ -1,11 +1,13 @@
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchTicker(ticker, retries = 3) {
+  // VIX uses a different Yahoo endpoint
+  const symbol = ticker.startsWith("^") ? encodeURIComponent(ticker) : ticker;
   const urls = [
-    `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`,
-    `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1d&range=1d`,
+    `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
   ];
-  
+
   for (let attempt = 0; attempt < retries; attempt++) {
     const url = urls[attempt % urls.length];
     try {
@@ -31,7 +33,7 @@ async function fetchTicker(ticker, retries = 3) {
       const change = price - prevClose;
       const changePct = (change / prevClose) * 100;
       return {
-        symbol: ticker,
+        symbol: ticker, // return original symbol including ^
         price,
         change,
         changesPercentage: changePct,
@@ -52,7 +54,6 @@ async function fetchTicker(ticker, retries = 3) {
 export default async function handler(req, res) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  
   if (req.method === "OPTIONS") return res.status(200).end();
 
   const { symbols } = req.query;
@@ -61,7 +62,6 @@ export default async function handler(req, res) {
   const tickers = symbols.split(",").map(t => t.trim()).filter(Boolean);
   const results = [];
 
-  // Fetch with small stagger to avoid rate limiting
   for (let i = 0; i < tickers.length; i++) {
     if (i > 0) await sleep(150);
     const result = await fetchTicker(tickers[i]);
