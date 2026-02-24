@@ -477,8 +477,16 @@ export default function App() {
       if (!res.ok) return;
       const json = await res.json();
       const mapped = {};
-      json.forEach(q => { if (q?.symbol) mapped[q.symbol] = q; });
-      setWatchlistLiveData(mapped);
+      json.forEach(q => {
+        if (q?.symbol) mapped[q.symbol] = {
+          price: q.price,
+          changePct: q.changesPercentage ?? q.changePct ?? null,
+          change: q.change,
+          dayHigh: q.dayHigh,
+          dayLow: q.dayLow,
+        };
+      });
+      setWatchlistLiveData(prev => ({ ...prev, ...mapped }));
     } catch {}
   }, [customWatchlist]);
 
@@ -516,8 +524,16 @@ export default function App() {
         consensus: analyst.consensus || null,
         buySell: analyst.buySell || null,
       };
+      // Store live data immediately so it shows without waiting for interval
+      const liveQuote = {
+        price: quote.price,
+        changePct: quote.changesPercentage ?? quote.changePct ?? null,
+        change: quote.change,
+        dayHigh: quote.dayHigh,
+        dayLow: quote.dayLow,
+      };
+      setWatchlistLiveData(prev => ({ ...prev, [ticker]: liveQuote }));
       setCustomWatchlist(prev => [...prev, newItem]);
-      setWatchlistLiveData(prev => ({ ...prev, [ticker]: quote }));
       setAddingTicker(""); setShowAddWatchlist(false);
     } catch { setAddTickerError("Failed to fetch data. Try again."); }
     setAddTickerLoading(false);
