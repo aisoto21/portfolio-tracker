@@ -224,6 +224,16 @@ export default function App() {
   const [editingPositions, setEditingPositions] = useState(false);
   const [countdown, setCountdown] = useState(15);
   const [priceAlerts, setPriceAlerts] = useState({ SCHD: "", GEV: "750", LLY: "", GOOGL: "", ORCL: "", MELI: "", CRM: "", ABBV: "", MRK: "" });
+  const [customWatchlist, setCustomWatchlist] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("customWatchlist") || "[]"); } catch { return []; }
+  });
+  const [showAddWatchlist, setShowAddWatchlist] = useState(false);
+  const [addingTicker, setAddingTicker] = useState("");
+  const [addTickerLoading, setAddTickerLoading] = useState(false);
+  const [addTickerError, setAddTickerError] = useState("");
+  const [watchlistLiveData, setWatchlistLiveData] = useState({});
+  const [editingWatchlistItem, setEditingWatchlistItem] = useState(null);
+  const [openCustomWatchlist, setOpenCustomWatchlist] = useState({});
   const [vix, setVix] = useState(null);
   const [portfolioHistory, setPortfolioHistory] = useState([]);
   const [tooltip, setTooltip] = useState(null);
@@ -452,6 +462,66 @@ export default function App() {
 
   // Fetch analyst data on first load
   useEffect(() => { fetchAnalystData(); }, [fetchAnalystData]);
+
+  // Save custom watchlist to localStorage whenever it changes
+  useEffect(() => {
+    try { localStorage.setItem("customWatchlist", JSON.stringify(customWatchlist)); } catch {}
+  }, [customWatchlist]);
+
+  // Fetch live prices for custom watchlist items
+  const fetchWatchlistLiveData = useCallback(async () => {
+    if (customWatchlist.length === 0) return;
+    const tickers = customWatchlist.map(w => w.ticker).join(",");
+    try {
+      const res = await fetch(`/api/quote?symbols=${tickers}&mode=fast`);
+      if (!res.ok) return;
+      const json = await res.json();
+      const mapped = {};
+      json.forEach(q => { if (q?.symbol) mapped[q.symbol] = q; });
+      setWatchlistLiveData(mapped);
+    } catch {}
+  }, [customWatchlist]);
+
+  useEffect(() => {
+    fetchWatchlistLiveData();
+    const i = setInterval(fetchWatchlistLiveData, 30000);
+    return () => clearInterval(i);
+  }, [fetchWatchlistLiveData]);
+
+  // Add a new ticker to custom watchlist
+  const handleAddWatchlistTicker = async () => {
+    const ticker = addingTicker.toUpperCase().trim();
+    if (!ticker) return;
+    if (customWatchlist.find(w => w.ticker === ticker)) {
+      setAddTickerError("Already on your watchlist!"); return;
+    }
+    setAddTickerLoading(true); setAddTickerError("");
+    try {
+      // Fetch live price to verify ticker exists
+      const res = await fetch(`/api/quote?symbols=${ticker}&mode=fast`);
+      const json = await res.json();
+      const quote = json?.[0];
+      if (!quote?.price) { setAddTickerError("Ticker not found — check the symbol and try again."); setAddTickerLoading(false); return; }
+      // Fetch analyst data
+      const aRes = await fetch(`/api/analyst?tickers=${ticker}`);
+      const aJson = await aRes.json();
+      const analyst = aJson?.[0] || {};
+      const newItem = {
+        ticker,
+        addedAt: new Date().toISOString(),
+        conviction: 5,
+        notes: "",
+        priceAlert: "",
+        analystTarget: analyst.analystTarget || null,
+        consensus: analyst.consensus || null,
+        buySell: analyst.buySell || null,
+      };
+      setCustomWatchlist(prev => [...prev, newItem]);
+      setWatchlistLiveData(prev => ({ ...prev, [ticker]: quote }));
+      setAddingTicker(""); setShowAddWatchlist(false);
+    } catch { setAddTickerError("Failed to fetch data. Try again."); }
+    setAddTickerLoading(false);
+  };
 
   // Fetch live news
   const fetchNews = useCallback(async () => {
@@ -1795,7 +1865,42 @@ export default function App() {
 
         {activeSection === 3 && activeTab === 0 && (
           <div>
-            <div style={{ textAlign: "center", marginBottom: 18 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Watchlist</div><p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>Strong & moderate conviction — in priority order</p></div>
+            {/* Header */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 18 }}>
+              <div>
+                <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Watchlist</div>
+                <p style={{ color: "#888", fontSize: 13, marginTop: 2 }}>Your radar — stocks you're watching closely</p>
+              </div>
+              <button onClick={() => { setShowAddWatchlist(p => !p); setAddTickerError(""); setAddingTicker(""); }}
+                style={{ background: showAddWatchlist ? "#f0f0f0" : "linear-gradient(135deg, #667eea, #764ba2)", color: showAddWatchlist ? "#666" : "white", border: "none", borderRadius: 100, padding: "9px 18px", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+                {showAddWatchlist ? "✕ Cancel" : "+ Add Stock"}
+              </button>
+            </div>
+
+            {/* Add ticker form */}
+            {showAddWatchlist && (
+              <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 4px 20px rgba(102,126,234,0.15)", border: "1.5px solid #e0e7ff" }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: "#333", marginBottom: 12 }}>➕ Add to Watchlist</div>
+                <div style={{ display: "flex", gap: 10, marginBottom: 8 }}>
+                  <input
+                    value={addingTicker}
+                    onChange={e => { setAddingTicker(e.target.value.toUpperCase()); setAddTickerError(""); }}
+                    onKeyDown={e => e.key === "Enter" && handleAddWatchlistTicker()}
+                    placeholder="e.g. AAPL, TSLA, SCHD..."
+                    style={{ flex: 1, padding: "10px 14px", borderRadius: 12, border: `2px solid ${addTickerError ? "#ef4444" : "#e0e7ff"}`, fontSize: 14, fontWeight: 700, outline: "none", textTransform: "uppercase" }}
+                  />
+                  <button onClick={handleAddWatchlistTicker} disabled={addTickerLoading || !addingTicker}
+                    style={{ background: "linear-gradient(135deg, #667eea, #764ba2)", color: "white", border: "none", borderRadius: 12, padding: "10px 20px", fontSize: 13, fontWeight: 700, cursor: addTickerLoading ? "wait" : "pointer", opacity: !addingTicker ? 0.5 : 1 }}>
+                    {addTickerLoading ? "..." : "Add"}
+                  </button>
+                </div>
+                {addTickerError && <div style={{ fontSize: 12, color: "#ef4444", fontWeight: 600 }}>⚠️ {addTickerError}</div>}
+                <div style={{ fontSize: 11, color: "#aaa", marginTop: 6 }}>We'll auto-fetch live price, analyst target & consensus. You add your own notes & conviction.</div>
+              </div>
+            )}
+
+            {/* Curated watchlist — original hand-written entries */}
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: 1, textTransform: "uppercase", marginBottom: 10, paddingLeft: 4 }}>📌 Your Curated List</div>
             {watchlistData.map((item, i) => (
               <div key={i} style={{ marginBottom: 12, background: "white", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", borderLeft: `5px solid ${item.color}` }}>
                 <button onClick={() => setOpenWatchlist(p => ({ ...p, [i]: !p[i] }))} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", border: "none", background: "white", cursor: "pointer", textAlign: "left" }}>
@@ -1827,7 +1932,129 @@ export default function App() {
                 )}
               </div>
             ))}
-            <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginTop: 8 }}>
+
+            {/* Custom added watchlist items */}
+            {customWatchlist.length > 0 && (
+              <>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: 1, textTransform: "uppercase", margin: "20px 0 10px", paddingLeft: 4 }}>⭐ Your Added Stocks</div>
+                {customWatchlist.map((item, i) => {
+                  const ld = watchlistLiveData[item.ticker];
+                  const isUp = ld && parseFloat(ld.changePct) >= 0;
+                  const isOpen = openCustomWatchlist[i];
+                  const isEditing = editingWatchlistItem === i;
+                  const convictionStars = "⭐".repeat(Math.min(5, Math.ceil(item.conviction / 2)));
+                  return (
+                    <div key={i} style={{ marginBottom: 12, background: "white", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", borderLeft: "5px solid #667eea" }}>
+                      <button onClick={() => setOpenCustomWatchlist(p => ({ ...p, [i]: !p[i] }))} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", border: "none", background: "white", cursor: "pointer", textAlign: "left" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span style={{ fontSize: 18, fontWeight: 900, color: "#667eea" }}>{item.ticker}</span>
+                          <div>
+                            <div style={{ fontSize: 12, color: "#888" }}>{convictionStars} {item.conviction}/10</div>
+                            <div style={{ fontSize: 11, color: "#bbb", marginTop: 1 }}>{item.notes ? item.notes.substring(0, 40) + "..." : "Tap to add your notes"}</div>
+                          </div>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          {ld && (
+                            <span style={{ fontWeight: 800, fontSize: 13, color: isUp ? "#10b981" : "#ef4444" }}>
+                              {isUp ? "▲" : "▼"}{Math.abs(parseFloat(ld.changePct)).toFixed(2)}%
+                            </span>
+                          )}
+                          <span style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s ease", opacity: 0.4, fontSize: 12 }}>▼</span>
+                        </div>
+                      </button>
+
+                      {isOpen && (
+                        <div style={{ padding: "0 18px 16px", borderTop: "1px solid #f5f5f5", paddingTop: 14 }}>
+                          {/* Live price row */}
+                          {ld && (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 14 }}>
+                              {[
+                                { label: "Price", val: `$${parseFloat(ld.price).toFixed(2)}`, color: "#333" },
+                                { label: "Today", val: `${isUp ? "▲" : "▼"}${Math.abs(parseFloat(ld.changePct)).toFixed(2)}%`, color: isUp ? "#10b981" : "#ef4444" },
+                                { label: "Analyst Target", val: item.analystTarget ? `$${item.analystTarget}` : "N/A", color: "#667eea" },
+                              ].map((s, si) => (
+                                <div key={si} style={{ background: "#f8f9ff", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
+                                  <div style={{ fontSize: 14, fontWeight: 800, color: s.color }}>{s.val}</div>
+                                  <div style={{ fontSize: 10, color: "#aaa", fontWeight: 600, marginTop: 2, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Consensus */}
+                          {item.consensus && (
+                            <div style={{ display: "flex", gap: 8, marginBottom: 14, flexWrap: "wrap" }}>
+                              <span style={{ background: "#f0fdf4", color: "#065f46", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 700 }}>📊 {item.consensus}</span>
+                              {item.buySell && <span style={{ background: "#f8f9ff", color: "#667eea", borderRadius: 100, padding: "4px 12px", fontSize: 11, fontWeight: 700 }}>{item.buySell}</span>}
+                            </div>
+                          )}
+
+                          {/* Editable notes & conviction */}
+                          {isEditing ? (
+                            <div style={{ marginBottom: 12 }}>
+                              <div style={{ fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Your Notes & Thesis</div>
+                              <textarea
+                                value={item.notes}
+                                onChange={e => setCustomWatchlist(prev => prev.map((w, wi) => wi === i ? { ...w, notes: e.target.value } : w))}
+                                placeholder="Why are you watching this? What's your entry point? What would make you buy?"
+                                style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid #e0e7ff", fontSize: 12, lineHeight: 1.6, resize: "vertical", minHeight: 80, fontFamily: "inherit", boxSizing: "border-box" }}
+                              />
+                              <div style={{ marginTop: 10 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Conviction: {item.conviction}/10</div>
+                                <input type="range" min="1" max="10" value={item.conviction}
+                                  onChange={e => setCustomWatchlist(prev => prev.map((w, wi) => wi === i ? { ...w, conviction: parseInt(e.target.value) } : w))}
+                                  style={{ width: "100%" }} />
+                              </div>
+                              <div style={{ marginTop: 10 }}>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: "#888", marginBottom: 6, textTransform: "uppercase", letterSpacing: 0.5 }}>Price Alert ($)</div>
+                                <input type="number" value={item.priceAlert}
+                                  onChange={e => setCustomWatchlist(prev => prev.map((w, wi) => wi === i ? { ...w, priceAlert: e.target.value } : w))}
+                                  placeholder="Alert me when price reaches..."
+                                  style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: "1.5px solid #e0e7ff", fontSize: 13, outline: "none", boxSizing: "border-box" }} />
+                              </div>
+                              <button onClick={() => setEditingWatchlistItem(null)} style={{ marginTop: 12, width: "100%", padding: 10, background: "linear-gradient(135deg, #667eea, #764ba2)", color: "white", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                                ✅ Save Notes
+                              </button>
+                            </div>
+                          ) : (
+                            <div style={{ marginBottom: 12 }}>
+                              {item.notes ? (
+                                <div style={{ background: "#f8f9ff", borderRadius: 10, padding: "10px 14px", fontSize: 13, color: "#444", lineHeight: 1.6, marginBottom: 10 }}>{item.notes}</div>
+                              ) : (
+                                <div style={{ background: "#f8f9ff", borderRadius: 10, padding: "10px 14px", fontSize: 12, color: "#bbb", marginBottom: 10, fontStyle: "italic" }}>No notes yet — tap Edit to add your thesis</div>
+                              )}
+                              {item.priceAlert && ld && (
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#f8f8f8", borderRadius: 10, padding: "8px 12px", marginBottom: 10 }}>
+                                  <span style={{ fontSize: 12, fontWeight: 700, color: "#667eea" }}>🔔 Alert at ${item.priceAlert}</span>
+                                  <span style={{ fontSize: 11, fontWeight: 700, color: parseFloat(ld.price) <= parseFloat(item.priceAlert) ? "#10b981" : "#f59e0b", marginLeft: "auto" }}>
+                                    {parseFloat(ld.price) <= parseFloat(item.priceAlert) ? "✅ IN RANGE!" : `$${parseFloat(ld.price).toFixed(2)} now`}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+
+                          {/* Action buttons */}
+                          <div style={{ display: "flex", gap: 8 }}>
+                            <button onClick={() => setEditingWatchlistItem(isEditing ? null : i)}
+                              style={{ flex: 1, padding: "8px 12px", borderRadius: 10, border: "1.5px solid #667eea", background: "white", color: "#667eea", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                              ✏️ {isEditing ? "Cancel" : "Edit Notes"}
+                            </button>
+                            <button onClick={() => { if (window.confirm(`Remove ${item.ticker} from watchlist?`)) setCustomWatchlist(prev => prev.filter((_, wi) => wi !== i)); }}
+                              style={{ padding: "8px 14px", borderRadius: 10, border: "1.5px solid #fee2e2", background: "white", color: "#ef4444", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </>
+            )}
+
+            {/* Next Capital Deployment */}
+            <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginTop: 16 }}>
               <div style={{ fontWeight: 800, fontSize: 15, marginBottom: 14, color: "#333" }}>💵 Next Capital Deployment</div>
               {[{ order: "1st", ticker: "SCHD", why: "Income & defensive layer — add immediately", color: "#10b981" }, { order: "2nd", ticker: "GEV", why: "Only if it pulls back to $700–750", color: "#f59e0b" }, { order: "3rd", ticker: "LLY", why: "When you can deploy $300–500 meaningfully", color: "#ec4899" }, { order: "4th", ticker: "GOOGL", why: "Revisit at each quarterly review", color: "#3b82f6" }].map((item, i) => (
                 <div key={i} style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "12px 0", borderBottom: i < 3 ? "1px solid #f5f5f5" : "none" }}>
