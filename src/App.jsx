@@ -541,6 +541,11 @@ export default function App() {
     if (activeSection === 1 && activeTab === 1) fetchNews();
   }, [activeSection, activeTab, fetchNews]);
 
+  // Refresh watchlist prices when watchlist tab is opened
+  useEffect(() => {
+    if (activeSection === 3) fetchWatchlistLiveData();
+  }, [activeSection, fetchWatchlistLiveData]);
+
   // DCA Calculator
   const calcDCA = () => {
     const amt = parseFloat(dcaAmount), yrs = parseFloat(dcaYears);
@@ -1939,7 +1944,8 @@ export default function App() {
                 <div style={{ fontSize: 11, fontWeight: 700, color: "#aaa", letterSpacing: 1, textTransform: "uppercase", margin: "20px 0 10px", paddingLeft: 4 }}>⭐ Your Added Stocks</div>
                 {customWatchlist.map((item, i) => {
                   const ld = watchlistLiveData[item.ticker];
-                  const isUp = ld && parseFloat(ld.changePct) >= 0;
+                  const changePct = ld?.changePct != null ? parseFloat(ld.changePct) : null;
+                  const isUp = changePct != null ? changePct >= 0 : true;
                   const isOpen = openCustomWatchlist[i];
                   const isEditing = editingWatchlistItem === i;
                   const convictionStars = "⭐".repeat(Math.min(5, Math.ceil(item.conviction / 2)));
@@ -1954,10 +1960,13 @@ export default function App() {
                           </div>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          {ld && (
+                          {ld && changePct != null && (
                             <span style={{ fontWeight: 800, fontSize: 13, color: isUp ? "#10b981" : "#ef4444" }}>
-                              {isUp ? "▲" : "▼"}{Math.abs(parseFloat(ld.changePct)).toFixed(2)}%
+                              {isUp ? "▲" : "▼"}{Math.abs(changePct).toFixed(2)}%
                             </span>
+                          )}
+                          {ld && changePct == null && (
+                            <span style={{ fontSize: 11, color: "#ccc" }}>Loading...</span>
                           )}
                           <span style={{ transform: isOpen ? "rotate(180deg)" : "none", transition: "transform 0.2s ease", opacity: 0.4, fontSize: 12 }}>▼</span>
                         </div>
@@ -1970,7 +1979,7 @@ export default function App() {
                             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 8, marginBottom: 14 }}>
                               {[
                                 { label: "Price", val: `$${parseFloat(ld.price).toFixed(2)}`, color: "#333" },
-                                { label: "Today", val: `${isUp ? "▲" : "▼"}${Math.abs(parseFloat(ld.changePct)).toFixed(2)}%`, color: isUp ? "#10b981" : "#ef4444" },
+                                { label: "Today", val: changePct != null ? `${changePct >= 0 ? "▲" : "▼"}${Math.abs(changePct).toFixed(2)}%` : "Loading...", color: changePct != null ? (changePct >= 0 ? "#10b981" : "#ef4444") : "#aaa" },
                                 { label: "Analyst Target", val: item.analystTarget ? `$${item.analystTarget}` : "N/A", color: "#667eea" },
                               ].map((s, si) => (
                                 <div key={si} style={{ background: "#f8f9ff", borderRadius: 10, padding: "10px 12px", textAlign: "center" }}>
