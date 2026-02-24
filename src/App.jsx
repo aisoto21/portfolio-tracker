@@ -246,6 +246,8 @@ export default function App() {
   const [showTradeForm, setShowTradeForm] = useState(false);
   const [tradeForm, setTradeForm] = useState({ ticker: "NVDA", action: "BUY", shares: "", price: "", date: new Date().toISOString().split("T")[0], thesis: "" });
   const [benchmarkData, setBenchmarkData] = useState({});
+  const [analystData, setAnalystData] = useState({});
+  const [analystLoading, setAnalystLoading] = useState(false);
   const [benchmarkRange, setBenchmarkRange] = useState("1mo");
   const [historyRange, setHistoryRange] = useState("today");
 
@@ -382,6 +384,13 @@ export default function App() {
     return staticData[ticker][field]; // fallback to hardcoded
   };
 
+  // Get live analyst value — falls back to static if API hasn't loaded
+  const getAnalyst = (ticker, field) => {
+    const ad = analystData[ticker];
+    if (ad && ad[field] !== null && ad[field] !== undefined) return ad[field];
+    return staticData[ticker][field === "analystTarget" ? "analystTarget" : field] ?? null;
+  };
+
   const totals = totalStats();
   const portfolioValue = livePortfolioValue();
   const todayPct = todayPortfolioPct();
@@ -403,6 +412,25 @@ export default function App() {
   };
   const activeRecs = getActiveRecs(selected);
   const live = liveData[selected];
+
+  // Fetch live analyst data
+  const fetchAnalystData = useCallback(async () => {
+    setAnalystLoading(true);
+    try {
+      const res = await fetch(`/api/analyst?tickers=${TICKERS.join(",")}`);
+      if (!res.ok) throw new Error("Analyst fetch failed");
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        const mapped = {};
+        data.forEach(d => { mapped[d.ticker] = d; });
+        setAnalystData(mapped);
+      }
+    } catch (e) { console.warn("Analyst fetch failed", e); }
+    setAnalystLoading(false);
+  }, []);
+
+  // Fetch analyst data on first load
+  useEffect(() => { fetchAnalystData(); }, [fetchAnalystData]);
 
   // Fetch live news
   const fetchNews = useCallback(async () => {
@@ -747,7 +775,7 @@ export default function App() {
               {live && (
                 <div style={{ background: data.light, padding: "14px 18px", borderBottom: "1px solid #f0f0f0" }}>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", textAlign: "center", marginBottom: 12 }}>
-                    {[{ label: "Live Price", val: `$${live.price}`, color: "#333" }, { label: "Today", val: `${parseFloat(live.changePct) >= 0 ? "▲" : "▼"}${Math.abs(parseFloat(live.changePct))}%`, color: parseFloat(live.changePct) >= 0 ? "#10b981" : "#ef4444" }, { label: "Market Cap", val: fmtMktCap(live.marketCap), color: "#555" }, { label: "To Target", val: data.analystTarget ? `${(((data.analystTarget - parseFloat(live.price)) / parseFloat(live.price)) * 100).toFixed(1)}%` : "N/A", color: "#6366f1" }].map((s, i) => (
+                    {[{ label: "Live Price", val: `$${live.price}`, color: "#333" }, { label: "Today", val: `${parseFloat(live.changePct) >= 0 ? "▲" : "▼"}${Math.abs(parseFloat(live.changePct))}%`, color: parseFloat(live.changePct) >= 0 ? "#10b981" : "#ef4444" }, { label: "Market Cap", val: fmtMktCap(live.marketCap), color: "#555" }, { label: "To Target", val: (() => { const t = getAnalyst(selected, "analystTarget") || data.analystTarget; return t ? `${(((t - parseFloat(live.price)) / parseFloat(live.price)) * 100).toFixed(1)}%` : "N/A"; })(), color: "#6366f1" }].map((s, i) => (
                       <div key={i} style={{ borderRight: i < 3 ? "1px solid #e8e8e8" : "none" }}>
                         <div className="price-animate" style={{ fontSize: 14, fontWeight: 800, color: s.color }}>{s.val}</div>
                         <div style={{ fontSize: 9, color: "#bbb", fontWeight: 600, letterSpacing: 1, textTransform: "uppercase", marginTop: 3 }}>{s.label}</div>
@@ -767,17 +795,27 @@ export default function App() {
                     </div></> ); })()}
                   </div>
                   {/* Analyst target bar */}
-                  {data.analystTarget && (
-                    <div>
-                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#aaa", fontWeight: 600, marginBottom: 4 }}>
-                        <span>Current</span>
-                        <span style={{ color: "#6366f1", fontWeight: 800 }}>Analyst Target: ${data.analystTarget}</span>
+                  {(() => {
+                    const liveTarget = getAnalyst(selected, "analystTarget") || data.analystTarget;
+                    const liveLow = analystData[selected]?.analystTargetLow;
+                    const liveHigh = analystData[selected]?.analystTargetHigh;
+                    if (!liveTarget) return null;
+                    const isLiveAnalyst = !!analystData[selected];
+                    return (
+                      <div>
+                        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#aaa", fontWeight: 600, marginBottom: 4 }}>
+                          <span>Current: ${live.price}</span>
+                          <span style={{ color: "#6366f1", fontWeight: 800 }}>
+                            Analyst Target: ${liveTarget} {isLiveAnalyst ? "🟢" : ""}
+                          </span>
+                        </div>
+                        {liveLow && liveHigh && <div style={{ fontSize: 10, color: "#aaa", textAlign: "right", marginBottom: 4 }}>Range: ${liveLow} – ${liveHigh}</div>}
+                        <div style={{ background: "#f0f0f0", borderRadius: 100, height: 8, overflow: "hidden" }}>
+                          <div style={{ width: `${Math.min(100, (parseFloat(live.price) / liveTarget) * 100)}%`, height: "100%", background: "linear-gradient(90deg, #667eea, #6366f1)", borderRadius: 100 }} />
+                        </div>
                       </div>
-                      <div style={{ background: "#f0f0f0", borderRadius: 100, height: 8, overflow: "hidden" }}>
-                        <div style={{ width: `${Math.min(100, (parseFloat(live.price) / data.analystTarget) * 100)}%`, height: "100%", background: "linear-gradient(90deg, #667eea, #6366f1)", borderRadius: 100 }} />
-                      </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               )}
 
@@ -806,7 +844,7 @@ export default function App() {
                         { label: rsi !== null ? `RSI ${rsi}` : "RSI —", color: !rsi ? "#aaa" : rsi < 30 ? "#ef4444" : rsi > 70 ? "#f59e0b" : "#10b981" },
                         { label: aboveMa50 === null ? "50MA —" : aboveMa50 ? "Above 50MA ✅" : "Below 50MA ⚠️", color: aboveMa50 === null ? "#aaa" : aboveMa50 ? "#10b981" : "#f59e0b" },
                         { label: aboveMa200 === null ? "200MA —" : aboveMa200 ? "Above 200MA ✅" : "Below 200MA ❌", color: aboveMa200 === null ? "#aaa" : aboveMa200 ? "#10b981" : "#ef4444" },
-                        { label: `Earnings: ${data.earningsDate}`, color: "#6366f1" },
+                        { label: `Earnings: ${analystData[selected]?.nextEarnings || data.earningsDate}${analystData[selected]?.nextEarnings ? " 🟢" : ""}`, color: "#6366f1" },
                       ].map((s, i) => (
                         <div key={i} style={{ background: `${s.color}15`, border: `1px solid ${s.color}30`, borderRadius: 100, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: s.color }}>{s.label}</div>
                       ))}
@@ -842,7 +880,12 @@ export default function App() {
                           {group.fields.map((field, fi) => (
                             <div key={field.key} style={{ display: "grid", gridTemplateColumns: "130px 1fr", borderBottom: fi < group.fields.length - 1 ? "1px solid #f0f0f0" : "none", background: fi % 2 === 0 ? "white" : "#fafafa" }}>
                               <div style={{ padding: "11px 14px", fontSize: 10, fontWeight: 700, color: group.color, letterSpacing: "0.5px", textTransform: "uppercase", borderRight: `3px solid ${group.color}20`, paddingTop: 13 }}>{field.label}</div>
-                              <div style={{ padding: "11px 14px", fontSize: 13, color: "#444", lineHeight: 1.6 }}>{field.key === "allocation" ? `${data[field.key]}%` : data[field.key]}</div>
+                              <div style={{ padding: "11px 14px", fontSize: 13, color: "#444", lineHeight: 1.6 }}>
+                              {field.key === "allocation" ? `${data[field.key]}%`
+                                : field.key === "buySell" ? (analystData[selected]?.buySell || data.buySell) + (analystData[selected]?.buySell ? " 🟢" : "")
+                                : field.key === "consensus" ? (analystData[selected]?.consensus || data.consensus) + (analystData[selected]?.consensus ? " 🟢" : "")
+                                : data[field.key]}
+                            </div>
                             </div>
                           ))}
                         </div>
@@ -1554,7 +1597,8 @@ export default function App() {
             </div>
             {Object.entries(staticData).map(([ticker, d]) => {
               const ld = liveData[ticker];
-              const upside = ld && d.analystTarget ? (((d.analystTarget - parseFloat(ld.price)) / parseFloat(ld.price)) * 100).toFixed(1) : null;
+              const liveTarget = analystData[ticker]?.analystTarget || d.analystTarget;
+              const upside = ld && liveTarget ? (((liveTarget - parseFloat(ld.price)) / parseFloat(ld.price)) * 100).toFixed(1) : null;
               return (
                 <div key={ticker} style={{ background: "white", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 12 }}>
                   <div style={{ background: d.gradient, padding: "14px 18px", color: "white", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
