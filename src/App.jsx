@@ -233,6 +233,9 @@ export default function App() {
   const [nicknameInput, setNicknameInput] = useState("");
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [newsFilter, setNewsFilter] = useState("ALL");
+  const [liveNews, setLiveNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(false);
+  const [newsError, setNewsError] = useState(false);
   const [dcaTicker, setDcaTicker] = useState("NVDA");
   const [dcaAmount, setDcaAmount] = useState("100");
   const [dcaFreq, setDcaFreq] = useState("monthly");
@@ -400,6 +403,24 @@ export default function App() {
   };
   const activeRecs = getActiveRecs(selected);
   const live = liveData[selected];
+
+  // Fetch live news
+  const fetchNews = useCallback(async () => {
+    setNewsLoading(true); setNewsError(false);
+    try {
+      const res = await fetch(`/api/news?tickers=${TICKERS.join(",")}`);
+      if (!res.ok) throw new Error("News fetch failed");
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) setLiveNews(data);
+      else setNewsError(true);
+    } catch { setNewsError(true); }
+    setNewsLoading(false);
+  }, []);
+
+  // Fetch news when Market Pulse tab is opened
+  useEffect(() => {
+    if (activeSection === 1 && activeTab === 1) fetchNews();
+  }, [activeSection, activeTab, fetchNews]);
 
   // DCA Calculator
   const calcDCA = () => {
@@ -609,12 +630,14 @@ export default function App() {
 
       {/* ── SUB-TAB NAV ── */}
       {NAV[activeSection].tabs.length > 1 && (
-        <div style={{ display: "flex", background: "white", borderBottom: "1px solid #f0f0f0", overflowX: "auto", scrollbarWidth: "none", padding: "0 4px" }}>
-          {NAV[activeSection].tabs.map((tab, ti) => (
-            <button key={ti} onClick={() => setActiveTab(ti)} style={{ flexShrink: 0, padding: "9px 16px", border: "none", background: "none", color: activeTab === ti ? NAV[activeSection].color : "#bbb", fontWeight: activeTab === ti ? 800 : 500, fontSize: 12.5, cursor: "pointer", borderBottom: activeTab === ti ? `2px solid ${NAV[activeSection].color}` : "2px solid transparent", whiteSpace: "nowrap", transition: "all 0.2s" }}>
-              {tab}
-            </button>
-          ))}
+        <div style={{ background: "white", borderBottom: "1px solid #f0f0f0", padding: "10px 16px" }}>
+          <div style={{ display: "flex", justifyContent: "center", gap: 6, flexWrap: "wrap" }}>
+            {NAV[activeSection].tabs.map((tab, ti) => (
+              <button key={ti} onClick={() => setActiveTab(ti)} style={{ padding: "7px 16px", borderRadius: 100, border: `2px solid ${activeTab === ti ? NAV[activeSection].color : "#eee"}`, background: activeTab === ti ? NAV[activeSection].color : "white", color: activeTab === ti ? "white" : "#999", fontWeight: activeTab === ti ? 800 : 600, fontSize: 12, cursor: "pointer", whiteSpace: "nowrap", transition: "all 0.2s", boxShadow: activeTab === ti ? `0 2px 10px ${NAV[activeSection].color}40` : "none" }}>
+                {tab}
+              </button>
+            ))}
+          </div>
         </div>
       )}
 
@@ -802,24 +825,7 @@ export default function App() {
                 );
               })()}
 
-              {/* Signal Recommendations */}
-              {activeRecs.length > 0 && (
-                <div style={{ padding: "12px 14px", borderBottom: "1px solid #f0f0f0" }}>
-                  {activeRecs.map((rec, i) => {
-                    const bgColor = rec.type === "healthy" ? "#f0fdf4" : rec.type === "opportunity" ? "#eff6ff" : rec.type === "warning" ? "#fef2f2" : "#fffbeb";
-                    const borderCol = rec.type === "healthy" ? "#10b981" : rec.type === "opportunity" ? "#3b82f6" : rec.type === "warning" ? "#ef4444" : "#f59e0b";
-                    const titleCol = rec.type === "healthy" ? "#065f46" : rec.type === "opportunity" ? "#1d4ed8" : rec.type === "warning" ? "#991b1b" : "#92400e";
-                    const icon = rec.type === "healthy" ? "✅" : rec.type === "opportunity" ? "💡" : rec.type === "warning" ? "🔴" : "⚠️";
-                    const label = rec.type === "healthy" ? "All Clear" : rec.type === "opportunity" ? "Potential Opportunity" : rec.type === "warning" ? "Review Your Position" : "Proceed With Caution";
-                    return (
-                      <div key={i} style={{ background: bgColor, border: `2px solid ${borderCol}30`, borderLeft: `4px solid ${borderCol}`, borderRadius: 14, padding: "14px 16px", marginBottom: i < activeRecs.length - 1 ? 10 : 0 }}>
-                        <div style={{ fontSize: 11, fontWeight: 800, color: titleCol, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>{icon} {label}</div>
-                        <div style={{ fontSize: 13, color: "#444", lineHeight: 1.7 }}>{rec.msg}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+
 
               {/* Field groups */}
               <div style={{ padding: 12 }}>
@@ -1414,32 +1420,69 @@ export default function App() {
           <div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Market News</div>
-              <p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>Headlines relevant to your portfolio</p>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
+                {newsLoading
+                  ? <><div style={{ width: 8, height: 8, border: "2px solid #ddd", borderTop: "2px solid #667eea", borderRadius: "50%", animation: "spin 1s linear infinite" }} /><span style={{ color: "#aaa", fontSize: 12 }}>Fetching live headlines...</span></>
+                  : newsError
+                  ? <span style={{ color: "#f59e0b", fontSize: 12 }}>⚠️ Using cached headlines · <button onClick={fetchNews} style={{ background: "none", border: "none", color: "#667eea", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>Retry</button></span>
+                  : <><div style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", boxShadow: "0 0 6px #10b981" }} /><span style={{ color: "#888", fontSize: 12 }}>Live · Yahoo Finance · <button onClick={fetchNews} style={{ background: "none", border: "none", color: "#667eea", fontWeight: 700, cursor: "pointer", fontSize: 12 }}>Refresh</button></span></>
+                }
+              </div>
             </div>
+
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16, justifyContent: "center" }}>
               {["ALL", ...TICKERS, "MARKET"].map(t => (
                 <button key={t} onClick={() => setNewsFilter(t)} style={{ padding: "6px 12px", borderRadius: 100, border: "none", background: newsFilter === t ? (staticData[t] ? staticData[t].gradient : "linear-gradient(135deg, #667eea, #764ba2)") : "white", color: newsFilter === t ? "white" : "#666", fontWeight: 700, fontSize: 11, cursor: "pointer", boxShadow: "0 2px 6px rgba(0,0,0,0.06)", transition: "all 0.2s ease" }}>{t}</button>
               ))}
             </div>
-            <div style={{ display: "grid", gap: 10 }}>
-              {newsItems.filter(n => newsFilter === "ALL" || n.ticker === newsFilter).map((item, i) => (
-                <div key={i} style={{ background: "white", borderRadius: 16, padding: "14px 16px", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", borderLeft: `4px solid ${item.sentiment === "bullish" ? "#10b981" : item.sentiment === "bearish" ? "#ef4444" : "#f59e0b"}`, animation: "slideIn 0.3s ease" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ display: "flex", gap: 6, marginBottom: 6, flexWrap: "wrap" }}>
-                        <span style={{ background: staticData[item.ticker] ? staticData[item.ticker].gradient : "linear-gradient(135deg, #667eea, #764ba2)", color: "white", borderRadius: 100, padding: "2px 8px", fontSize: 10, fontWeight: 800 }}>{item.ticker}</span>
-                        <span style={{ background: item.sentiment === "bullish" ? "#d1fae5" : item.sentiment === "bearish" ? "#fee2e2" : "#fef3c7", color: item.sentiment === "bullish" ? "#065f46" : item.sentiment === "bearish" ? "#991b1b" : "#92400e", borderRadius: 100, padding: "2px 8px", fontSize: 10, fontWeight: 700 }}>{item.sentiment === "bullish" ? "📈 Bullish" : item.sentiment === "bearish" ? "📉 Bearish" : "➡️ Neutral"}</span>
-                        <span style={{ color: "#bbb", fontSize: 10, fontWeight: 600, paddingTop: 2 }}>{item.time}</span>
-                      </div>
-                      <div style={{ fontSize: 13.5, fontWeight: 600, color: "#333", lineHeight: 1.5 }}>{item.headline}</div>
+
+            {newsLoading && liveNews.length === 0 ? (
+              <div style={{ display: "grid", gap: 10 }}>
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} style={{ background: "white", borderRadius: 16, padding: "18px 16px", boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
+                    <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
+                      <div style={{ width: 40, height: 18, background: "#f0f0f0", borderRadius: 100 }} />
+                      <div style={{ width: 60, height: 18, background: "#f0f0f0", borderRadius: 100 }} />
                     </div>
+                    <div style={{ height: 14, background: "#f5f5f5", borderRadius: 6, marginBottom: 6 }} />
+                    <div style={{ height: 14, background: "#f5f5f5", borderRadius: 6, width: "70%" }} />
                   </div>
-                </div>
-              ))}
-            </div>
-            <div style={{ textAlign: "center", marginTop: 16, padding: "12px 16px", background: "white", borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
-              <div style={{ fontSize: 12, color: "#aaa", lineHeight: 1.6 }}>📡 For live news, visit <a href="https://finviz.com" target="_blank" rel="noopener noreferrer" style={{ color: "#667eea", fontWeight: 700 }}>Finviz.com</a>, <a href="https://stockanalysis.com" target="_blank" rel="noopener noreferrer" style={{ color: "#667eea", fontWeight: 700 }}>Stockanalysis.com</a>, or search your tickers on <a href="https://finance.yahoo.com" target="_blank" rel="noopener noreferrer" style={{ color: "#667eea", fontWeight: 700 }}>Yahoo Finance</a></div>
-            </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: "grid", gap: 10 }}>
+                {(liveNews.length > 0 ? liveNews : newsItems).filter(n => newsFilter === "ALL" || n.ticker === newsFilter).map((item, i) => {
+                  const tickerColor = staticData[item.ticker] ? staticData[item.ticker].gradient : "linear-gradient(135deg, #667eea, #764ba2)";
+                  const isLive = liveNews.length > 0;
+                  return (
+                    <a key={i} href={item.url || "#"} target="_blank" rel="noopener noreferrer" style={{ textDecoration: "none" }}>
+                      <div style={{ background: "white", borderRadius: 16, padding: "14px 16px", boxShadow: "0 2px 10px rgba(0,0,0,0.06)", borderLeft: "4px solid #667eea", animation: "slideIn 0.3s ease", transition: "box-shadow 0.2s", cursor: "pointer" }}
+                        onMouseOver={e => e.currentTarget.style.boxShadow = "0 4px 20px rgba(102,126,234,0.2)"}
+                        onMouseOut={e => e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.06)"}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap", alignItems: "center" }}>
+                              <span style={{ background: tickerColor, color: "white", borderRadius: 100, padding: "2px 10px", fontSize: 10, fontWeight: 800 }}>{item.ticker}</span>
+                              {item.source && <span style={{ background: "#f5f5f5", color: "#888", borderRadius: 100, padding: "2px 8px", fontSize: 10, fontWeight: 600 }}>{item.source}</span>}
+                              <span style={{ color: "#bbb", fontSize: 10, fontWeight: 600 }}>{item.time}</span>
+                              {isLive && <span style={{ color: "#10b981", fontSize: 9, fontWeight: 700, letterSpacing: 0.5 }}>● LIVE</span>}
+                            </div>
+                            <div style={{ fontSize: 13.5, fontWeight: 600, color: "#333", lineHeight: 1.55 }}>{item.headline}</div>
+                          </div>
+                          <span style={{ fontSize: 16, flexShrink: 0, opacity: 0.4 }}>→</span>
+                        </div>
+                      </div>
+                    </a>
+                  );
+                })}
+              </div>
+            )}
+
+            {!newsLoading && liveNews.length === 0 && !newsError && (
+              <div style={{ textAlign: "center", marginTop: 16, padding: "12px 16px", background: "white", borderRadius: 16, boxShadow: "0 2px 10px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: 12, color: "#aaa" }}>Showing curated headlines · Live news loads automatically</div>
+              </div>
+            )}
           </div>
         )}
 
