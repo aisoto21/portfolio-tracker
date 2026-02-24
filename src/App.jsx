@@ -56,6 +56,7 @@ const fieldGroups = [
   { groupLabel: "📊 Position Basics", color: "#3b82f6", bg: "#eff6ff", fields: [{ key: "sector", label: "Sector" }, { key: "category", label: "Category" }, { key: "bucket", label: "Bucket" }, { key: "timeHorizon", label: "Time Horizon" }, { key: "upcomingCatalyst", label: "Upcoming Catalyst" }, { key: "recentPerformance", label: "Recent Performance" }] },
   { groupLabel: "💰 Allocation & Pricing", color: "#10b981", bg: "#f0fdf4", fields: [{ key: "allocation", label: "Allocation %" }, { key: "dollarAmount", label: "Target $ Amount" }, { key: "approxShares", label: "Target Shares" }, { key: "dividendYield", label: "Dividend Yield" }, { key: "expenseRatio", label: "Expense Ratio" }, { key: "rothOverlap", label: "Roth IRA Overlap" }] },
   { groupLabel: "📈 Analyst Data", color: "#f59e0b", bg: "#fffbeb", fields: [{ key: "buySell", label: "Buy / Hold / Sell" }, { key: "consensus", label: "Consensus" }, { key: "conviction", label: "Our Conviction" }] },
+  { groupLabel: "🏥 Financial Health", color: "#10b981", bg: "#f0fdf4", fields: [{ key: "currentRatio", label: "Current Ratio" }, { key: "debtToEquity", label: "Debt / Equity" }, { key: "grossMargin", label: "Gross Margin" }, { key: "operatingMargin", label: "Operating Margin" }, { key: "fcf", label: "Free Cash Flow" }] },
   { groupLabel: "🌍 Market & AI Context", color: "#8b5cf6", bg: "#f5f3ff", fields: [{ key: "aiAngle", label: "AI Angle" }, { key: "macroTailwinds", label: "Macro Tailwinds" }] },
   { groupLabel: "🧠 Investment Thesis", color: "#ef4444", bg: "#fef2f2", fields: [{ key: "whyWeOwnIt", label: "Why We Own It" }, { key: "whyNotAlternative", label: "Why Not Alternative" }, { key: "entryPointNote", label: "Entry Point Note" }, { key: "nextAddPriority", label: "Next Add Priority" }] },
   { groupLabel: "⚠️ Risk Factors", color: "#dc2626", bg: "#fff5f5", fields: [{ key: "riskFactors", label: "Risk Factors" }] },
@@ -317,6 +318,7 @@ export default function App() {
 
   // SLOW fetch — technicals only, runs once on load then every 5 minutes
   const [technicalsData, setTechnicalsData] = useState({});
+  const [sparklineData, setSparklineData] = useState({});
 
   const fetchTechnicals = useCallback(async () => {
     try {
@@ -463,6 +465,26 @@ export default function App() {
   // Fetch analyst data on first load
   useEffect(() => { fetchAnalystData(); }, [fetchAnalystData]);
 
+  // Fetch real sparkline data for portfolio cards
+  const fetchSparklines = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/sparkline?tickers=${TICKERS.join(",")}`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (Array.isArray(json)) {
+        const mapped = {};
+        json.forEach(d => { if (d?.symbol) mapped[d.symbol] = d; });
+        setSparklineData(mapped);
+      }
+    } catch (e) { console.warn("Sparkline fetch failed", e); }
+  }, []);
+
+  useEffect(() => {
+    fetchSparklines();
+    const i = setInterval(fetchSparklines, 5 * 60 * 1000); // refresh every 5 min
+    return () => clearInterval(i);
+  }, [fetchSparklines]);
+
   // Save custom watchlist to localStorage whenever it changes
   useEffect(() => {
     try { localStorage.setItem("customWatchlist", JSON.stringify(customWatchlist)); } catch {}
@@ -595,13 +617,15 @@ export default function App() {
     if (!ld) return <div style={{ width: 50, height: 18, background: "rgba(255,255,255,0.1)", borderRadius: 4 }} />;
     const isUp = parseFloat(ld.changePct) >= 0;
     const c = isUp ? "#4ade80" : "#f87171";
-    const seed = ticker.split("").reduce((a, ch) => a + ch.charCodeAt(0), 0);
-    const points = Array.from({ length: 10 }, (_, i) => {
-      const v = (Math.sin((seed + i) * 0.8) + Math.cos((seed + i) * 1.3)) / 2;
-      return isUp ? 0.5 + v * 0.4 + (i / 9) * 0.3 : 0.8 + v * 0.3 - (i / 9) * 0.3;
-    });
-    const path = points.map((p, i) => `${i === 0 ? "M" : "L"} ${(i / 9) * 50} ${Math.max(1, Math.min(17, p * 18))}`).join(" ");
-    return <svg width="50" height="18"><path d={path} fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+    const sd = sparklineData[ticker];
+    if (sd && sd.points && sd.points.length > 1) {
+      const pts = sd.points;
+      const min = Math.min(...pts), max = Math.max(...pts), range = max - min || 1;
+      const path = pts.map((p, i) => `${i === 0 ? "M" : "L"} ${(i / (pts.length - 1)) * 50} ${Math.max(1, Math.min(17, 17 - ((p - min) / range) * 16))}`).join(" ");
+      return <svg width="50" height="18"><path d={path} fill="none" stroke={c} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>;
+    }
+    // Fallback to subtle flat line while loading
+    return <svg width="50" height="18"><line x1="0" y1="9" x2="50" y2="9" stroke={c} strokeWidth="1" strokeDasharray="3,2" opacity="0.4" /></svg>;
   };
 
   // Donut
@@ -993,10 +1017,34 @@ export default function App() {
                             <div key={field.key} style={{ display: "grid", gridTemplateColumns: "130px 1fr", borderBottom: fi < group.fields.length - 1 ? "1px solid #f0f0f0" : "none", background: fi % 2 === 0 ? "white" : "#fafafa" }}>
                               <div style={{ padding: "11px 14px", fontSize: 10, fontWeight: 700, color: group.color, letterSpacing: "0.5px", textTransform: "uppercase", borderRight: `3px solid ${group.color}20`, paddingTop: 13 }}>{field.label}</div>
                               <div style={{ padding: "11px 14px", fontSize: 13, color: "#444", lineHeight: 1.6 }}>
-                              {field.key === "allocation" ? `${data[field.key]}%`
-                                : field.key === "buySell" ? (analystData[selected]?.buySell || data.buySell) + (analystData[selected]?.buySell ? " 🟢" : "")
-                                : field.key === "consensus" ? (analystData[selected]?.consensus || data.consensus) + (analystData[selected]?.consensus ? " 🟢" : "")
-                                : data[field.key]}
+                              {(() => {
+                                const ad = analystData[selected];
+                                if (field.key === "allocation") return `${data[field.key]}%`;
+                                if (field.key === "buySell") return (ad?.buySell || data.buySell) + (ad?.buySell ? " 🟢" : "");
+                                if (field.key === "consensus") return (ad?.consensus || data.consensus) + (ad?.consensus ? " 🟢" : "");
+                                if (field.key === "currentRatio") {
+                                  const val = ad?.currentRatio;
+                                  return val != null ? (
+                                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ fontWeight: 800, color: val >= 1.5 ? "#10b981" : val >= 1 ? "#f59e0b" : "#ef4444" }}>{val}</span>
+                                      <span style={{ fontSize: 11, color: "#aaa" }}>{val >= 1.5 ? "✅ Healthy" : val >= 1 ? "⚠️ Adequate" : "🔴 Tight"}</span>
+                                      <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>🟢</span>
+                                    </span>
+                                  ) : data.currentRatio || "N/A";
+                                }
+                                if (field.key === "debtToEquity") {
+                                  const val = ad?.debtToEquity;
+                                  return val != null ? (
+                                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                                      <span style={{ fontWeight: 800, color: val <= 0.5 ? "#10b981" : val <= 1.5 ? "#f59e0b" : "#ef4444" }}>{val}x</span>
+                                      <span style={{ fontSize: 11, color: "#aaa" }}>{val <= 0.5 ? "✅ Low leverage" : val <= 1.5 ? "⚠️ Moderate" : "🔴 High leverage"}</span>
+                                      <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>🟢</span>
+                                    </span>
+                                  ) : data.debtEquity || "N/A";
+                                }
+                                if (field.key === "grossMargin") return (ad?.grossMarginLive || data.grossMargin) + (ad?.grossMarginLive ? " 🟢" : "");
+                                return data[field.key];
+                              })()}
                             </div>
                             </div>
                           ))}
@@ -1794,23 +1842,132 @@ export default function App() {
           </div>
         )}
 
-        {activeSection === 2 && activeTab === 1 && (
-          <div>
-            <div style={{ textAlign: "center", marginBottom: 14 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Swing Trading Prep</div></div>
-            <div style={{ background: "linear-gradient(135deg, #fef3c7, #fde68a)", borderRadius: 16, padding: "14px 18px", marginBottom: 14, border: "2px solid #f59e0b40" }}>
-              <div style={{ fontWeight: 800, fontSize: 14, color: "#92400e", marginBottom: 5 }}>⚠️ The Golden Rule</div>
-              <div style={{ fontSize: 13, color: "#78350f", lineHeight: 1.6 }}>Paper trade on Webull for a minimum of <strong>60 days</strong> before ANY real swing trades. Target: win rate above 50% AND average win larger than average loss.</div>
-            </div>
-            {[{ concept: "📊 Support & Resistance", detail: "Support = a price level where a stock has historically bounced upward. Resistance = where it has stalled. Buy near support, take profits near resistance.", tip: "Draw horizontal lines on TradingView at obvious price levels where the stock repeatedly reversed." }, { concept: "📈 Moving Averages", detail: "50-day MA and 200-day MA are the most watched levels. Price above both = bullish. The Golden Cross (50MA crosses above 200MA) is a bullish signal.", tip: "Golden Cross = bullish. Death Cross (50MA crosses below 200MA) = bearish." }, { concept: "⚡ RSI", detail: "Momentum on a 0–100 scale. Above 70 = overbought. Below 30 = oversold. Most useful in range-bound markets.", tip: "Don't use RSI alone — combine with support/resistance and volume." }, { concept: "🌊 MACD", detail: "MACD line crossing above signal line = bullish. Crossing below = bearish. Histogram shows strength.", tip: "MACD divergence is powerful — when price makes new high but MACD doesn't, momentum is fading." }, { concept: "📦 Volume", detail: "Breakout on HIGH volume = institutional conviction — the move is real. Low volume breakout = likely false.", tip: "A valid breakout should show at least 1.5–2x average daily volume." }, { concept: "🕯️ Candlesticks", detail: "Hammer (bullish reversal at support), Shooting Star (bearish at resistance), Engulfing (strong reversal).", tip: "Learn 3 patterns really well rather than 50 poorly." }, { concept: "📋 Paper Trade First", detail: "Use Webull's paper trading simulator for 60 days minimum. Track wins AND losses.", tip: "Target: win rate above 50% AND average win larger than average loss before going live." }].map((item, i) => (
-              <div key={i} style={{ marginBottom: 10, borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)", background: "white" }}>
-                <button onClick={() => setOpenSwing(p => ({ ...p, [i]: !p[i] }))} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", border: "none", background: openSwing[i] ? "linear-gradient(135deg, #667eea, #764ba2)" : "white", color: openSwing[i] ? "white" : "#333", fontWeight: 700, fontSize: 13.5, cursor: "pointer", transition: "all 0.2s ease", textAlign: "left" }}>
-                  <span>{item.concept}</span><span style={{ transform: openSwing[i] ? "rotate(180deg)" : "none", transition: "transform 0.2s ease", opacity: 0.7, flexShrink: 0, marginLeft: 10 }}>▼</span>
-                </button>
-                {openSwing[i] && <div style={{ padding: "14px 18px" }}><div style={{ fontSize: 13.5, color: "#444", lineHeight: 1.7, marginBottom: 10 }}>{item.detail}</div><div style={{ display: "flex", gap: 8, background: "#f0f9ff", borderRadius: 10, padding: "10px 12px" }}><span>💡</span><span style={{ fontSize: 12.5, color: "#0369a1", lineHeight: 1.6 }}>{item.tip}</span></div></div>}
+        {activeSection === 2 && activeTab === 1 && (() => {
+          // Swing trade scanner — analyze each ticker's technicals
+          const swingSetups = TICKERS.map(ticker => {
+            const td = technicalsData[ticker] || {};
+            const ld = liveData[ticker] || {};
+            const sd = staticData[ticker];
+            const rsi = td.rsi ?? sd.rsi;
+            const aboveMa50 = td.aboveMa50 ?? sd.aboveMa50;
+            const aboveMa200 = td.aboveMa200 ?? sd.aboveMa200;
+            const ma50 = td.ma50;
+            const price = parseFloat(ld.price) || 0;
+            const pctFromMa50 = ma50 && price ? ((price - ma50) / ma50 * 100) : null;
+            const signals = [];
+            let score = 0;
+            let setup = null;
+
+            // Oversold bounce setup
+            if (rsi && rsi < 35 && aboveMa200) {
+              signals.push({ type: "bull", text: `RSI ${rsi} — oversold on long-term uptrend` });
+              score += 3; setup = "Oversold Bounce";
+            }
+            // MA50 support test
+            if (pctFromMa50 !== null && pctFromMa50 > -3 && pctFromMa50 < 2 && aboveMa200) {
+              signals.push({ type: "bull", text: `Testing 50MA support (${pctFromMa50 > 0 ? "+" : ""}${pctFromMa50.toFixed(1)}% from MA)` });
+              score += 2; setup = setup || "MA50 Support Test";
+            }
+            // Momentum setup
+            if (rsi && rsi > 55 && rsi < 70 && aboveMa50 && aboveMa200) {
+              signals.push({ type: "bull", text: `RSI ${rsi} — healthy momentum, not overbought` });
+              score += 2; setup = setup || "Momentum Continuation";
+            }
+            // Overbought warning
+            if (rsi && rsi > 75) {
+              signals.push({ type: "warn", text: `RSI ${rsi} — overbought, wait for pullback` });
+              score -= 1;
+            }
+            // Below both MAs — avoid
+            if (!aboveMa50 && !aboveMa200) {
+              signals.push({ type: "bear", text: "Below both MAs — no swing setup" });
+              score -= 2;
+            }
+            // Golden zone — above 200 but below 50 (potential recovery)
+            if (!aboveMa50 && aboveMa200 && rsi < 45) {
+              signals.push({ type: "bull", text: "Above 200MA, below 50MA — potential recovery zone" });
+              score += 1; setup = setup || "Recovery Watch";
+            }
+
+            const rating = score >= 3 ? "🟢 Strong Setup" : score >= 1 ? "🟡 Watch" : "🔴 Avoid";
+            const ratingColor = score >= 3 ? "#10b981" : score >= 1 ? "#f59e0b" : "#ef4444";
+
+            return { ticker, rsi, aboveMa50, aboveMa200, ma50, price, pctFromMa50, signals, score, setup, rating, ratingColor, gradient: sd.gradient, accent: sd.accent };
+          }).sort((a, b) => b.score - a.score);
+
+          const swingConcepts = [
+            { concept: "📊 Support & Resistance", detail: "Support is a price level where buyers historically step in — the stock bounces up. Resistance is where sellers take over — the stock stalls. Your job: buy near support, sell near resistance. These levels are self-fulfilling because everyone watches the same charts.", tip: "On TradingView, draw horizontal lines at obvious price levels where the stock reversed at least 2–3 times. The more touches, the stronger the level." },
+            { concept: "📈 The Two MAs That Matter", detail: "50-day MA = short-term trend. 200-day MA = long-term trend. Price above both = bull market for that stock. The Golden Cross (50MA crossing above 200MA) is the most watched bullish signal in all of trading.", tip: "The 50MA is your swing trading guide. Price bouncing off the 50MA on low RSI is one of the cleanest setups. The 200MA is your safety net — never short above it." },
+            { concept: "⚡ RSI — Momentum Meter", detail: "RSI measures buying/selling momentum on a 0–100 scale. Above 70 = overbought (expect pullback). Below 30 = oversold (expect bounce). The sweet spot for swing entries: RSI 35–50 on a stock in an uptrend.", tip: "RSI divergence is powerful — if price makes a new high but RSI doesn't, momentum is fading and a reversal may be coming. Don't use RSI in isolation." },
+            { concept: "🌊 MACD", detail: "MACD (Moving Average Convergence Divergence) shows when short-term momentum is shifting. MACD line crossing above signal line = buy signal. Histogram above zero = momentum is positive.", tip: "MACD crossovers on the daily chart are your entry triggers. Combine with RSI confirmation for higher-probability setups." },
+            { concept: "📦 Volume — The Truth Teller", detail: "Price moves on high volume = real institutional conviction. Breakouts on low volume are traps — they look convincing but reverse quickly. Volume is the market's lie detector.", tip: "A real breakout needs at least 1.5–2x average daily volume. If a stock breaks out on normal volume, be skeptical. Wait for confirmation the next day." },
+            { concept: "🕯️ The 3 Candlestick Patterns Worth Learning", detail: "Hammer: long lower wick at support = bulls rejected the lows. Shooting star: long upper wick at resistance = sellers took over. Bullish engulfing: a big green candle fully engulfs the previous red one = buyers took control.", tip: "Don't memorize 50 patterns. Master these 3 and combine them with support/resistance levels for high-conviction setups." },
+            { concept: "🎯 The Setup Formula", detail: "The cleanest swing trade setup: Stock in uptrend (above 200MA) → pulls back to 50MA → RSI cools to 35–50 → volume dries up → bounce candle on above-average volume. This is the bread-and-butter setup used by professional swing traders.", tip: "Entry: bounce candle close. Stop: 2–3% below the MA being tested. Target: previous high or 1.5–2x your risk. If you risk $100, target $150–200." },
+            { concept: "📋 Risk Management — The Only Rule That Keeps You Alive", detail: "Never risk more than 1–2% of your portfolio on a single swing trade. Use a hard stop loss. A win rate of 50% with a 2:1 reward/risk ratio is massively profitable over time. Most beginners do the opposite — big risks, small profits.", tip: "Paper trade on Webull for 60 days minimum before going live. Track every trade: entry, exit, thesis, result. You'll learn more from your losses than your wins." },
+          ];
+
+          return (
+            <div>
+              <div style={{ textAlign: "center", marginBottom: 18 }}>
+                <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Swing Trading</div>
+                <p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>Crash course + live setup scanner for your portfolio</p>
               </div>
-            ))}
-          </div>
-        )}
+
+              {/* Golden Rule */}
+              <div style={{ background: "linear-gradient(135deg, #fef3c7, #fde68a)", borderRadius: 16, padding: "14px 18px", marginBottom: 18, border: "2px solid #f59e0b40" }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: "#92400e", marginBottom: 5 }}>⚠️ The Golden Rule</div>
+                <div style={{ fontSize: 13, color: "#78350f", lineHeight: 1.6 }}>Paper trade on Webull for <strong>60 days minimum</strong> before ANY real swing trades. Target: win rate above 50% with average win larger than average loss. No exceptions.</div>
+              </div>
+
+              {/* Live Setup Scanner */}
+              <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 18, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontWeight: 900, fontSize: 16, color: "#333", marginBottom: 4 }}>🔍 Live Setup Scanner</div>
+                <div style={{ fontSize: 12, color: "#aaa", marginBottom: 16 }}>Based on live RSI + Moving Averages for your portfolio — updates every 5 min</div>
+                {swingSetups.map((s, i) => (
+                  <div key={i} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 0", borderBottom: i < swingSetups.length - 1 ? "1px solid #f5f5f5" : "none" }}>
+                    <div style={{ width: 44, height: 44, borderRadius: 12, background: s.gradient, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 900, fontSize: 11, color: "white", flexShrink: 0 }}>{s.ticker}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                        <span style={{ fontWeight: 800, fontSize: 13, color: "#333" }}>{s.setup || "No Clear Setup"}</span>
+                        <span style={{ fontSize: 11, fontWeight: 700, color: s.ratingColor, background: `${s.ratingColor}15`, borderRadius: 100, padding: "2px 8px" }}>{s.rating}</span>
+                      </div>
+                      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                        {s.signals.map((sig, si) => (
+                          <span key={si} style={{ fontSize: 10, color: sig.type === "bull" ? "#065f46" : sig.type === "warn" ? "#92400e" : "#991b1b", background: sig.type === "bull" ? "#d1fae5" : sig.type === "warn" ? "#fef3c7" : "#fee2e2", borderRadius: 100, padding: "2px 8px", fontWeight: 600 }}>{sig.text}</span>
+                        ))}
+                        {s.signals.length === 0 && <span style={{ fontSize: 10, color: "#aaa" }}>Not enough data yet</span>}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: "#333" }}>RSI {s.rsi || "—"}</div>
+                      <div style={{ fontSize: 10, color: "#aaa", marginTop: 2 }}>{s.aboveMa50 ? "✅ >50MA" : "⚠️ <50MA"}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Crash Course */}
+              <div style={{ fontWeight: 900, fontSize: 16, color: "#333", marginBottom: 12 }}>📚 Swing Trading Crash Course</div>
+              {swingConcepts.map((item, i) => (
+                <div key={i} style={{ marginBottom: 10, borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.05)", background: "white" }}>
+                  <button onClick={() => setOpenSwing(p => ({ ...p, [i]: !p[i] }))} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 18px", border: "none", background: openSwing[i] ? "linear-gradient(135deg, #667eea, #764ba2)" : "white", color: openSwing[i] ? "white" : "#333", fontWeight: 700, fontSize: 13.5, cursor: "pointer", transition: "all 0.2s ease", textAlign: "left" }}>
+                    <span>{item.concept}</span>
+                    <span style={{ transform: openSwing[i] ? "rotate(180deg)" : "none", transition: "transform 0.2s ease", opacity: 0.7, flexShrink: 0, marginLeft: 10 }}>▼</span>
+                  </button>
+                  {openSwing[i] && (
+                    <div style={{ padding: "14px 18px" }}>
+                      <div style={{ fontSize: 13.5, color: "#444", lineHeight: 1.7, marginBottom: 12 }}>{item.detail}</div>
+                      <div style={{ display: "flex", gap: 8, background: "#f0f9ff", borderRadius: 10, padding: "10px 12px" }}>
+                        <span>💡</span>
+                        <span style={{ fontSize: 12.5, color: "#0369a1", lineHeight: 1.6 }}>{item.tip}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
 
         {activeSection === 2 && activeTab === 2 && (
           <div>
