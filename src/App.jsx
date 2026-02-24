@@ -4,13 +4,13 @@ const TICKERS = ["NVDA", "AVGO", "MSFT", "CEG", "VTI", "VXUS", "MCK"];
 const NAMES = ["Beautiful", "Money Moves", "Boss Investor", "Dream Team", "Future Millionaire"];
 
 const staticData = {
-  NVDA: { company: "Nvidia Corporation", sector: "Technology / Semiconductors", category: "Aggressive Growth", allocation: 20, dollarAmount: "$225.92", approxShares: "~1.19", analystTarget: 253.88, week52High: 153.13, week52Low: 86.00, buySell: "57 Buy, 7 Hold, 1 Sell", consensus: "Strong Buy", convictionScore: 9, conviction: "9/10", recentPerformance: "Volatile post-DeepSeek shock", upcomingCatalyst: "⚡ Earnings Feb 25", timeHorizon: "3–5+ years", bucket: "Aggressive", dividendYield: "~0.03%", expenseRatio: "N/A", rothOverlap: "Indirect via QQQ", aiAngle: "GPU / general AI infrastructure", macroTailwinds: "AI data center demand, CUDA ecosystem moat", whyWeOwnIt: "AI infrastructure still in early innings. CUDA moat competitors cannot replicate in 2–3 years.", whyNotAlternative: "N/A", riskFactors: "High valuation, Taiwan supply chain risk", entryPointNote: "Conviction buy long term", nextAddPriority: "Hold and add on dips", watchlistConnection: "N/A", gradient: "linear-gradient(135deg, #76b900, #a8e063)", light: "#f0ffe0", accent: "#76b900", tag: "🟢 Aggressive Growth", emoji: "⚡", peRatio: "~31x", pegRatio: "~0.9", evEbitda: "~35x", grossMargin: "~75%", operatingMargin: "~55%", roe: "~115%", debtEquity: "~0.4x", fcf: "Growing strongly — $26B+ annually", revenueGrowth: "~122% YoY", rsi: 48, aboveMa50: false, aboveMa200: true, earningsDate: "Feb 26, 2025", earningsEst: "$0.84 EPS", correlation: { AVGO: 0.82, MSFT: 0.78, CEG: 0.45, VTI: 0.72, VXUS: 0.58, MCK: 0.31 } },
-  AVGO: { company: "Broadcom Inc.", sector: "Technology / Semiconductors", category: "Aggressive-Moderate Growth", allocation: 16, dollarAmount: "$180.73", approxShares: "~0.52", analystTarget: 475.00, week52High: 251.88, week52Low: 122.76, buySell: "46 Buy, 2 Hold, 0 Sell", consensus: "Strong Buy 9.5/10", convictionScore: 10, conviction: "10/10 ⭐", recentPerformance: "~50% gain in 2025", upcomingCatalyst: "📅 Earnings Mar 4", timeHorizon: "3–5+ years", bucket: "Aggressive-Moderate", dividendYield: "~1.1%", expenseRatio: "N/A", rothOverlap: "Indirect via QQQ", aiAngle: "Custom AI silicon + networking for hyperscalers", macroTailwinds: "Custom AI chip demand, VMware FCF", whyWeOwnIt: "Builds chips hyperscalers use to reduce NVDA dependence — NVDA's biggest threat is AVGO's biggest opportunity.", whyNotAlternative: "Not CAT — ran 32% YTD, cyclical.", riskFactors: "Semiconductor cyclicality, VMware integration risk", entryPointNote: "Conviction buy — strongest analyst consensus", nextAddPriority: "Hold — highest conviction", watchlistConnection: "N/A", gradient: "linear-gradient(135deg, #cc0000, #ff6b6b)", light: "#fff0f0", accent: "#cc0000", tag: "🔴 Aggressive-Moderate", emoji: "🔥", peRatio: "~34x", pegRatio: "~0.85", evEbitda: "~22x", grossMargin: "~64%", operatingMargin: "~37%", roe: "~60%+", debtEquity: "~1.8x", fcf: "Strong — $19B+ annually", revenueGrowth: "~51% YoY", rsi: 55, aboveMa50: true, aboveMa200: true, earningsDate: "Mar 6, 2025", earningsEst: "$1.49 EPS", correlation: { NVDA: 0.82, MSFT: 0.75, CEG: 0.42, VTI: 0.68, VXUS: 0.55, MCK: 0.28 } },
-  MSFT: { company: "Microsoft Corporation", sector: "Technology / Enterprise Software", category: "Moderate-Growth", allocation: 15, dollarAmount: "$169.44", approxShares: "~0.43", analystTarget: 628.98, week52High: 468.35, week52Low: 385.58, buySell: "32 Buy, 2 Hold, 0 Sell", consensus: "Strong Buy 8.5/10", convictionScore: 9.5, conviction: "9.5/10", recentPerformance: "+16% YTD — underperformed past year", upcomingCatalyst: "✅ None imminent", timeHorizon: "3–5+ years", bucket: "Moderate-Growth", dividendYield: "~0.7%", expenseRatio: "N/A", rothOverlap: "None", aiAngle: "Enterprise AI via Copilot — 70% of Fortune 500", macroTailwinds: "Azure +39% YoY, Copilot adoption", whyWeOwnIt: "Great business punished irrationally. Azure +39%, 98% analysts say Buy.", whyNotAlternative: "Not GOOGL — already ran 65% YTD.", riskFactors: "Three tech names move together on bad days", entryPointNote: "Conviction buy — buying the lag", nextAddPriority: "Hold and monitor quarterly", watchlistConnection: "GOOGL as future complement", gradient: "linear-gradient(135deg, #00a4ef, #50d9ff)", light: "#e8f8ff", accent: "#00a4ef", tag: "🔵 Moderate-Growth", emoji: "☁️", peRatio: "~28x", pegRatio: "~1.4", evEbitda: "~22x", grossMargin: "~70%", operatingMargin: "~44%", roe: "~38%", debtEquity: "~0.35x", fcf: "Exceptional — $70B+ annually", revenueGrowth: "~17% YoY", rsi: 52, aboveMa50: true, aboveMa200: true, earningsDate: "Apr 30, 2025", earningsEst: "$3.22 EPS", correlation: { NVDA: 0.78, AVGO: 0.75, CEG: 0.40, VTI: 0.80, VXUS: 0.65, MCK: 0.35 } },
-  CEG: { company: "Constellation Energy", sector: "Energy / Nuclear Power", category: "Moderate-Growth", allocation: 12, dollarAmount: "$135.55", approxShares: "~0.47", analystTarget: 406.00, week52High: 334.91, week52Low: 144.83, buySell: "14 Buy, 5 Hold, 0 Sell", consensus: "Strong Buy 8.5/10", convictionScore: 9, conviction: "9/10", recentPerformance: "Down 24% YTD — policy selloff, NOT fundamentals", upcomingCatalyst: "🚀 New CyrusOne 380MW deal signed", timeHorizon: "3–5+ years", bucket: "Moderate-Growth", dividendYield: "~0.5%", expenseRatio: "N/A", rothOverlap: "None", aiAngle: "Nuclear power sold directly to AI data centers via PPAs", macroTailwinds: "AI power demand, nuclear renaissance", whyWeOwnIt: "Down 24% from a policy headline — not fundamentals. 53% upside, zero Sells.", whyNotAlternative: "Not GEV — at all time highs, 2 Sell ratings.", riskFactors: "Policy and regulatory risk", entryPointNote: "Conviction buy at genuine discount", nextAddPriority: "Add on further pullback", watchlistConnection: "GEV on watchlist at $700–750", gradient: "linear-gradient(135deg, #f7a800, #ffd166)", light: "#fffae8", accent: "#f7a800", tag: "🟡 Moderate-Growth", emoji: "⚛️", peRatio: "~16x", pegRatio: "~0.7", evEbitda: "~12x", grossMargin: "~28%", operatingMargin: "~18%", roe: "~22%", debtEquity: "~1.2x", fcf: "Strong — $4.5–6B projected", revenueGrowth: "~8% YoY", rsi: 38, aboveMa50: false, aboveMa200: false, earningsDate: "Feb 26, 2025", earningsEst: "$1.65 EPS", correlation: { NVDA: 0.45, AVGO: 0.42, MSFT: 0.40, VTI: 0.38, VXUS: 0.30, MCK: 0.22 } },
-  VTI: { company: "Vanguard Total Stock Market ETF", sector: "Broad U.S. Market — ETF", category: "Anchor / Moderate", allocation: 17, dollarAmount: "$192.03", approxShares: "~0.57", analystTarget: null, week52High: 296.00, week52Low: 226.00, buySell: "N/A — ETF", consensus: "N/A — ETF", convictionScore: 10, conviction: "10/10 ⭐", recentPerformance: "Small cap rotation benefiting in 2026", upcomingCatalyst: "✅ No specific catalyst", timeHorizon: "Indefinite", bucket: "Anchor", dividendYield: "~1.3%", expenseRatio: "0.03% 💚", rothOverlap: "Minimal", aiAngle: "Indirect", macroTailwinds: "Broad U.S. economy, small cap rotation", whyWeOwnIt: "Entire U.S. market in one ETF — 4,000+ stocks, 0.03% fee.", whyNotAlternative: "Not RSP — 7x higher fees, underperforms over 10 years.", riskFactors: "Market-wide downturns", entryPointNote: "Always a reasonable entry", nextAddPriority: "First ETF to add consistently", watchlistConnection: "SCHD", gradient: "linear-gradient(135deg, #1a5276, #2e86c1)", light: "#eaf4ff", accent: "#2e86c1", tag: "🛡️ Anchor ETF", emoji: "🇺🇸", peRatio: "~22x", pegRatio: "N/A", evEbitda: "N/A", grossMargin: "N/A", operatingMargin: "N/A", roe: "N/A", debtEquity: "N/A", fcf: "N/A", revenueGrowth: "N/A", rsi: 51, aboveMa50: true, aboveMa200: true, earningsDate: "N/A — ETF", earningsEst: "N/A", correlation: { NVDA: 0.72, AVGO: 0.68, MSFT: 0.80, CEG: 0.38, VXUS: 0.75, MCK: 0.45 } },
-  VXUS: { company: "Vanguard Total International ETF", sector: "International Markets — ETF", category: "Anchor / Moderate", allocation: 13, dollarAmount: "$146.85", approxShares: "~1.76", analystTarget: null, week52High: 66.00, week52Low: 52.00, buySell: "N/A — ETF", consensus: "N/A — ETF", convictionScore: 9.5, conviction: "9.5/10", recentPerformance: "Outperforming U.S. equities in 2026 ✅", upcomingCatalyst: "✅ No specific catalyst", timeHorizon: "Indefinite", bucket: "Anchor", dividendYield: "~2.8% 💚", expenseRatio: "0.07%", rothOverlap: "Intentional", aiAngle: "Indirect", macroTailwinds: "International outperforming in 2026, USD weakness", whyWeOwnIt: "International genuinely outperforming U.S. in 2026. Hedges against U.S. concentration risk.", whyNotAlternative: "N/A", riskFactors: "Currency risk, geopolitical risk", entryPointNote: "Always a reasonable entry", nextAddPriority: "Second ETF to add consistently", watchlistConnection: "N/A", gradient: "linear-gradient(135deg, #117a65, #1abc9c)", light: "#e8fff8", accent: "#117a65", tag: "🌍 Anchor ETF", emoji: "🌎", peRatio: "N/A", pegRatio: "N/A", evEbitda: "N/A", grossMargin: "N/A", operatingMargin: "N/A", roe: "N/A", debtEquity: "N/A", fcf: "N/A", revenueGrowth: "N/A", rsi: 54, aboveMa50: true, aboveMa200: true, earningsDate: "N/A — ETF", earningsEst: "N/A", correlation: { NVDA: 0.58, AVGO: 0.55, MSFT: 0.65, CEG: 0.30, VTI: 0.75, MCK: 0.40 } },
-  MCK: { company: "McKesson Corporation", sector: "Healthcare / Medical Distribution", category: "Moderate Growth", allocation: 7, dollarAmount: "$79.07", approxShares: "~0.08", analystTarget: 1107, week52High: 772.00, week52Low: 480.00, buySell: "Moderate Buy", consensus: "Moderate Buy", convictionScore: 8.5, conviction: "8.5/10", recentPerformance: "+55.2% past year 🚀", upcomingCatalyst: "✅ None imminent", timeHorizon: "3–5 years", bucket: "Moderate", dividendYield: "~0.6%", expenseRatio: "N/A", rothOverlap: "None", aiAngle: "None — pure healthcare compounder", macroTailwinds: "Aging population, pharma demand", whyWeOwnIt: "Largest pharma distributor in North America. Every drug prescribed likely touches McKesson.", whyNotAlternative: "Not LLY — $800+, high P/E, needs perfect execution.", riskFactors: "Drug pricing regulation, Amazon pharmacy long term", entryPointNote: "Strong 1yr run, 10-15% more runway", nextAddPriority: "Priority add as account grows", watchlistConnection: "LLY as healthcare upgrade", gradient: "linear-gradient(135deg, #6c3483, #a855f7)", light: "#faf0ff", accent: "#6c3483", tag: "💜 Moderate Growth", emoji: "💊", peRatio: "~20x", pegRatio: "~1.1", evEbitda: "~14x", grossMargin: "~5–6%", operatingMargin: "~2.5%", roe: "~80%+", debtEquity: "~1.0x", fcf: "Strong — $4B+ annually", revenueGrowth: "~15% YoY", rsi: 62, aboveMa50: true, aboveMa200: true, earningsDate: "May 7, 2025", earningsEst: "$10.12 EPS", correlation: { NVDA: 0.31, AVGO: 0.28, MSFT: 0.35, CEG: 0.22, VTI: 0.45, VXUS: 0.40 } },
+  NVDA: { company: "Nvidia Corporation", sector: "Technology / Semiconductors", category: "Aggressive Growth", allocation: 20, dollarAmount: "$225.92", approxShares: "~1.19", analystTarget: 253.88, week52High: 153.13, week52Low: 86.00, dividendYieldPct: 0.03, exDivDate: "N/A", annualDivPerShare: 0.04, buySell: "57 Buy, 7 Hold, 1 Sell", consensus: "Strong Buy", convictionScore: 9, conviction: "9/10", recentPerformance: "Volatile post-DeepSeek shock", upcomingCatalyst: "⚡ Earnings Feb 25", timeHorizon: "3–5+ years", bucket: "Aggressive", dividendYield: "~0.03%", expenseRatio: "N/A", rothOverlap: "Indirect via QQQ", aiAngle: "GPU / general AI infrastructure", macroTailwinds: "AI data center demand, CUDA ecosystem moat", whyWeOwnIt: "AI infrastructure still in early innings. CUDA moat competitors cannot replicate in 2–3 years.", whyNotAlternative: "N/A", riskFactors: "High valuation, Taiwan supply chain risk", entryPointNote: "Conviction buy long term", nextAddPriority: "Hold and add on dips", watchlistConnection: "N/A", gradient: "linear-gradient(135deg, #76b900, #a8e063)", light: "#f0ffe0", accent: "#76b900", tag: "🟢 Aggressive Growth", emoji: "⚡", peRatio: "~31x", pegRatio: "~0.9", evEbitda: "~35x", grossMargin: "~75%", operatingMargin: "~55%", roe: "~115%", debtEquity: "~0.4x", fcf: "Growing strongly — $26B+ annually", revenueGrowth: "~122% YoY", rsi: 48, aboveMa50: false, aboveMa200: true, earningsDate: "Feb 26, 2025", earningsEst: "$0.84 EPS", correlation: { AVGO: 0.82, MSFT: 0.78, CEG: 0.45, VTI: 0.72, VXUS: 0.58, MCK: 0.31 } },
+  AVGO: { company: "Broadcom Inc.", sector: "Technology / Semiconductors", category: "Aggressive-Moderate Growth", allocation: 16, dollarAmount: "$180.73", approxShares: "~0.52", analystTarget: 475.00, week52High: 251.88, week52Low: 122.76, dividendYieldPct: 1.1, exDivDate: "Mar 20, 2026", annualDivPerShare: 2.36, buySell: "46 Buy, 2 Hold, 0 Sell", consensus: "Strong Buy 9.5/10", convictionScore: 10, conviction: "10/10 ⭐", recentPerformance: "~50% gain in 2025", upcomingCatalyst: "📅 Earnings Mar 4", timeHorizon: "3–5+ years", bucket: "Aggressive-Moderate", dividendYield: "~1.1%", expenseRatio: "N/A", rothOverlap: "Indirect via QQQ", aiAngle: "Custom AI silicon + networking for hyperscalers", macroTailwinds: "Custom AI chip demand, VMware FCF", whyWeOwnIt: "Builds chips hyperscalers use to reduce NVDA dependence — NVDA's biggest threat is AVGO's biggest opportunity.", whyNotAlternative: "Not CAT — ran 32% YTD, cyclical.", riskFactors: "Semiconductor cyclicality, VMware integration risk", entryPointNote: "Conviction buy — strongest analyst consensus", nextAddPriority: "Hold — highest conviction", watchlistConnection: "N/A", gradient: "linear-gradient(135deg, #cc0000, #ff6b6b)", light: "#fff0f0", accent: "#cc0000", tag: "🔴 Aggressive-Moderate", emoji: "🔥", peRatio: "~34x", pegRatio: "~0.85", evEbitda: "~22x", grossMargin: "~64%", operatingMargin: "~37%", roe: "~60%+", debtEquity: "~1.8x", fcf: "Strong — $19B+ annually", revenueGrowth: "~51% YoY", rsi: 55, aboveMa50: true, aboveMa200: true, earningsDate: "Mar 6, 2025", earningsEst: "$1.49 EPS", correlation: { NVDA: 0.82, MSFT: 0.75, CEG: 0.42, VTI: 0.68, VXUS: 0.55, MCK: 0.28 } },
+  MSFT: { company: "Microsoft Corporation", sector: "Technology / Enterprise Software", category: "Moderate-Growth", allocation: 15, dollarAmount: "$169.44", approxShares: "~0.43", analystTarget: 628.98, week52High: 468.35, week52Low: 385.58, dividendYieldPct: 0.7, exDivDate: "May 15, 2026", annualDivPerShare: 3.32, buySell: "32 Buy, 2 Hold, 0 Sell", consensus: "Strong Buy 8.5/10", convictionScore: 9.5, conviction: "9.5/10", recentPerformance: "+16% YTD — underperformed past year", upcomingCatalyst: "✅ None imminent", timeHorizon: "3–5+ years", bucket: "Moderate-Growth", dividendYield: "~0.7%", expenseRatio: "N/A", rothOverlap: "None", aiAngle: "Enterprise AI via Copilot — 70% of Fortune 500", macroTailwinds: "Azure +39% YoY, Copilot adoption", whyWeOwnIt: "Great business punished irrationally. Azure +39%, 98% analysts say Buy.", whyNotAlternative: "Not GOOGL — already ran 65% YTD.", riskFactors: "Three tech names move together on bad days", entryPointNote: "Conviction buy — buying the lag", nextAddPriority: "Hold and monitor quarterly", watchlistConnection: "GOOGL as future complement", gradient: "linear-gradient(135deg, #00a4ef, #50d9ff)", light: "#e8f8ff", accent: "#00a4ef", tag: "🔵 Moderate-Growth", emoji: "☁️", peRatio: "~28x", pegRatio: "~1.4", evEbitda: "~22x", grossMargin: "~70%", operatingMargin: "~44%", roe: "~38%", debtEquity: "~0.35x", fcf: "Exceptional — $70B+ annually", revenueGrowth: "~17% YoY", rsi: 52, aboveMa50: true, aboveMa200: true, earningsDate: "Apr 30, 2025", earningsEst: "$3.22 EPS", correlation: { NVDA: 0.78, AVGO: 0.75, CEG: 0.40, VTI: 0.80, VXUS: 0.65, MCK: 0.35 } },
+  CEG: { company: "Constellation Energy", sector: "Energy / Nuclear Power", category: "Moderate-Growth", allocation: 12, dollarAmount: "$135.55", approxShares: "~0.47", analystTarget: 406.00, week52High: 334.91, week52Low: 144.83, dividendYieldPct: 0.5, exDivDate: "Mar 5, 2026", annualDivPerShare: 1.41, buySell: "14 Buy, 5 Hold, 0 Sell", consensus: "Strong Buy 8.5/10", convictionScore: 9, conviction: "9/10", recentPerformance: "Down 24% YTD — policy selloff, NOT fundamentals", upcomingCatalyst: "🚀 New CyrusOne 380MW deal signed", timeHorizon: "3–5+ years", bucket: "Moderate-Growth", dividendYield: "~0.5%", expenseRatio: "N/A", rothOverlap: "None", aiAngle: "Nuclear power sold directly to AI data centers via PPAs", macroTailwinds: "AI power demand, nuclear renaissance", whyWeOwnIt: "Down 24% from a policy headline — not fundamentals. 53% upside, zero Sells.", whyNotAlternative: "Not GEV — at all time highs, 2 Sell ratings.", riskFactors: "Policy and regulatory risk", entryPointNote: "Conviction buy at genuine discount", nextAddPriority: "Add on further pullback", watchlistConnection: "GEV on watchlist at $700–750", gradient: "linear-gradient(135deg, #f7a800, #ffd166)", light: "#fffae8", accent: "#f7a800", tag: "🟡 Moderate-Growth", emoji: "⚛️", peRatio: "~16x", pegRatio: "~0.7", evEbitda: "~12x", grossMargin: "~28%", operatingMargin: "~18%", roe: "~22%", debtEquity: "~1.2x", fcf: "Strong — $4.5–6B projected", revenueGrowth: "~8% YoY", rsi: 38, aboveMa50: false, aboveMa200: false, earningsDate: "Feb 26, 2025", earningsEst: "$1.65 EPS", correlation: { NVDA: 0.45, AVGO: 0.42, MSFT: 0.40, VTI: 0.38, VXUS: 0.30, MCK: 0.22 } },
+  VTI: { company: "Vanguard Total Stock Market ETF", sector: "Broad U.S. Market — ETF", category: "Anchor / Moderate", allocation: 17, dollarAmount: "$192.03", approxShares: "~0.57", analystTarget: null, week52High: 296.00, week52Low: 226.00, dividendYieldPct: 1.3, exDivDate: "Mar 25, 2026", annualDivPerShare: 3.52, buySell: "N/A — ETF", consensus: "N/A — ETF", convictionScore: 10, conviction: "10/10 ⭐", recentPerformance: "Small cap rotation benefiting in 2026", upcomingCatalyst: "✅ No specific catalyst", timeHorizon: "Indefinite", bucket: "Anchor", dividendYield: "~1.3%", expenseRatio: "0.03% 💚", rothOverlap: "Minimal", aiAngle: "Indirect", macroTailwinds: "Broad U.S. economy, small cap rotation", whyWeOwnIt: "Entire U.S. market in one ETF — 4,000+ stocks, 0.03% fee.", whyNotAlternative: "Not RSP — 7x higher fees, underperforms over 10 years.", riskFactors: "Market-wide downturns", entryPointNote: "Always a reasonable entry", nextAddPriority: "First ETF to add consistently", watchlistConnection: "SCHD", gradient: "linear-gradient(135deg, #1a5276, #2e86c1)", light: "#eaf4ff", accent: "#2e86c1", tag: "🛡️ Anchor ETF", emoji: "🇺🇸", peRatio: "~22x", pegRatio: "N/A", evEbitda: "N/A", grossMargin: "N/A", operatingMargin: "N/A", roe: "N/A", debtEquity: "N/A", fcf: "N/A", revenueGrowth: "N/A", rsi: 51, aboveMa50: true, aboveMa200: true, earningsDate: "N/A — ETF", earningsEst: "N/A", correlation: { NVDA: 0.72, AVGO: 0.68, MSFT: 0.80, CEG: 0.38, VXUS: 0.75, MCK: 0.45 } },
+  VXUS: { company: "Vanguard Total International ETF", sector: "International Markets — ETF", category: "Anchor / Moderate", allocation: 13, dollarAmount: "$146.85", approxShares: "~1.76", analystTarget: null, week52High: 66.00, week52Low: 52.00, dividendYieldPct: 2.8, exDivDate: "Mar 25, 2026", annualDivPerShare: 1.68, buySell: "N/A — ETF", consensus: "N/A — ETF", convictionScore: 9.5, conviction: "9.5/10", recentPerformance: "Outperforming U.S. equities in 2026 ✅", upcomingCatalyst: "✅ No specific catalyst", timeHorizon: "Indefinite", bucket: "Anchor", dividendYield: "~2.8% 💚", expenseRatio: "0.07%", rothOverlap: "Intentional", aiAngle: "Indirect", macroTailwinds: "International outperforming in 2026, USD weakness", whyWeOwnIt: "International genuinely outperforming U.S. in 2026. Hedges against U.S. concentration risk.", whyNotAlternative: "N/A", riskFactors: "Currency risk, geopolitical risk", entryPointNote: "Always a reasonable entry", nextAddPriority: "Second ETF to add consistently", watchlistConnection: "N/A", gradient: "linear-gradient(135deg, #117a65, #1abc9c)", light: "#e8fff8", accent: "#117a65", tag: "🌍 Anchor ETF", emoji: "🌎", peRatio: "N/A", pegRatio: "N/A", evEbitda: "N/A", grossMargin: "N/A", operatingMargin: "N/A", roe: "N/A", debtEquity: "N/A", fcf: "N/A", revenueGrowth: "N/A", rsi: 54, aboveMa50: true, aboveMa200: true, earningsDate: "N/A — ETF", earningsEst: "N/A", correlation: { NVDA: 0.58, AVGO: 0.55, MSFT: 0.65, CEG: 0.30, VTI: 0.75, MCK: 0.40 } },
+  MCK: { company: "McKesson Corporation", sector: "Healthcare / Medical Distribution", category: "Moderate Growth", allocation: 7, dollarAmount: "$79.07", approxShares: "~0.08", analystTarget: 1107, week52High: 772.00, week52Low: 480.00, dividendYieldPct: 0.6, exDivDate: "Apr 1, 2026", annualDivPerShare: 5.52, buySell: "Moderate Buy", consensus: "Moderate Buy", convictionScore: 8.5, conviction: "8.5/10", recentPerformance: "+55.2% past year 🚀", upcomingCatalyst: "✅ None imminent", timeHorizon: "3–5 years", bucket: "Moderate", dividendYield: "~0.6%", expenseRatio: "N/A", rothOverlap: "None", aiAngle: "None — pure healthcare compounder", macroTailwinds: "Aging population, pharma demand", whyWeOwnIt: "Largest pharma distributor in North America. Every drug prescribed likely touches McKesson.", whyNotAlternative: "Not LLY — $800+, high P/E, needs perfect execution.", riskFactors: "Drug pricing regulation, Amazon pharmacy long term", entryPointNote: "Strong 1yr run, 10-15% more runway", nextAddPriority: "Priority add as account grows", watchlistConnection: "LLY as healthcare upgrade", gradient: "linear-gradient(135deg, #6c3483, #a855f7)", light: "#faf0ff", accent: "#6c3483", tag: "💜 Moderate Growth", emoji: "💊", peRatio: "~20x", pegRatio: "~1.1", evEbitda: "~14x", grossMargin: "~5–6%", operatingMargin: "~2.5%", roe: "~80%+", debtEquity: "~1.0x", fcf: "Strong — $4B+ annually", revenueGrowth: "~15% YoY", rsi: 62, aboveMa50: true, aboveMa200: true, earningsDate: "May 7, 2025", earningsEst: "$10.12 EPS", correlation: { NVDA: 0.31, AVGO: 0.28, MSFT: 0.35, CEG: 0.22, VTI: 0.45, VXUS: 0.40 } },
 };
 
 const DEFAULT_POSITIONS = { NVDA: { avgCost: "", shares: "" }, AVGO: { avgCost: "", shares: "" }, MSFT: { avgCost: "", shares: "" }, CEG: { avgCost: "", shares: "" }, VTI: { avgCost: "", shares: "" }, VXUS: { avgCost: "", shares: "" }, MCK: { avgCost: "", shares: "" } };
@@ -45,7 +45,12 @@ const newsItems = [
   { ticker: "MARKET", headline: "Goldman Sachs raises 2026 S&P 500 target to 6,500 on strong earnings growth", time: "6h ago", sentiment: "bullish", url: "#" },
 ];
 
-const TABS = ["💼 Portfolio", "📊 My P&L", "🔥 Heat Map", "📰 News", "📅 Calendar", "📐 Metrics", "🔍 DD Guide", "📈 Swing", "🌍 Sectors", "📋 Rules", "🗓 Review", "📚 Resources", "⭐ Watchlist"];
+const NAV = [
+  { label: "💼 My Portfolio", color: "#667eea", tabs: ["Overview", "P&L", "Dividends", "Benchmark", "Journal"] },
+  { label: "📡 Market Pulse", color: "#f093fb", tabs: ["Heat Map", "News", "Calendar", "Metrics"] },
+  { label: "📚 Learn", color: "#10b981", tabs: ["DD Guide", "Swing", "Sectors", "Rules", "Review", "Resources"] },
+  { label: "⭐ Watchlist", color: "#f59e0b", tabs: ["Watchlist"] },
+];
 
 const fieldGroups = [
   { groupLabel: "📊 Position Basics", color: "#3b82f6", bg: "#eff6ff", fields: [{ key: "sector", label: "Sector" }, { key: "category", label: "Category" }, { key: "bucket", label: "Bucket" }, { key: "timeHorizon", label: "Time Horizon" }, { key: "upcomingCatalyst", label: "Upcoming Catalyst" }, { key: "recentPerformance", label: "Recent Performance" }] },
@@ -200,6 +205,7 @@ function AllocationBar({ pct }) {
 
 export default function App() {
   const [selected, setSelected] = useState("NVDA");
+  const [activeSection, setActiveSection] = useState(0);
   const [activeTab, setActiveTab] = useState(0);
   const [openGroups, setOpenGroups] = useState({});
   const [openDD, setOpenDD] = useState({});
@@ -233,6 +239,11 @@ export default function App() {
   const [dcaYears, setDcaYears] = useState("5");
   const [whatIfTicker, setWhatIfTicker] = useState("NVDA");
   const [whatIfPct, setWhatIfPct] = useState("20");
+  const [tradeLog, setTradeLog] = useState([]);
+  const [showTradeForm, setShowTradeForm] = useState(false);
+  const [tradeForm, setTradeForm] = useState({ ticker: "NVDA", action: "BUY", shares: "", price: "", date: new Date().toISOString().split("T")[0], thesis: "" });
+  const [benchmarkData, setBenchmarkData] = useState({});
+  const [benchmarkRange, setBenchmarkRange] = useState("1mo");
 
   useEffect(() => {
     const h = new Date().getHours();
@@ -252,7 +263,22 @@ export default function App() {
         let vixVal = null;
         json.forEach(q => {
           if (q?.symbol === "^VIX") { vixVal = parseFloat(q.price); }
-          else if (q?.symbol) mapped[q.symbol] = { price: q.price != null ? Number(q.price).toFixed(2) : null, change: q.change != null ? Number(q.change).toFixed(2) : null, changePct: q.changesPercentage != null ? Number(q.changesPercentage).toFixed(2) : null, dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null, dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null, marketCap: q.marketCap, volume: q.volume };
+          else if (q?.symbol) mapped[q.symbol] = {
+            price: q.price != null ? Number(q.price).toFixed(2) : null,
+            change: q.change != null ? Number(q.change).toFixed(2) : null,
+            changePct: q.changesPercentage != null ? Number(q.changesPercentage).toFixed(2) : null,
+            dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null,
+            dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null,
+            marketCap: q.marketCap, volume: q.volume,
+            // Live calculated technicals
+            rsi: q.rsi,
+            ma50: q.ma50,
+            ma200: q.ma200,
+            aboveMa50: q.aboveMa50,
+            aboveMa200: q.aboveMa200,
+            week52High: q.week52High,
+            week52Low: q.week52Low,
+          };
         });
         if (vixVal) setVix(vixVal);
         setLiveData(prev => {
@@ -273,7 +299,41 @@ export default function App() {
     setLoading(false);
   }, []);
 
+  // SLOW fetch — technicals only, runs once on load then every 5 minutes
+  const fetchTechnicals = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/quote?symbols=${TICKERS.join(",")}&mode=technicals`);
+      if (!res.ok) return;
+      const json = await res.json();
+      if (Array.isArray(json) && json.length > 0) {
+        setLiveData(prev => {
+          const updated = { ...prev };
+          json.forEach(q => {
+            if (q?.symbol && updated[q.symbol]) {
+              updated[q.symbol] = {
+                ...updated[q.symbol],
+                rsi: q.rsi,
+                ma50: q.ma50,
+                ma200: q.ma200,
+                aboveMa50: q.aboveMa50,
+                aboveMa200: q.aboveMa200,
+                week52High: q.week52High || updated[q.symbol].week52High,
+                week52Low: q.week52Low || updated[q.symbol].week52Low,
+              };
+            }
+          });
+          return updated;
+        });
+      }
+    } catch (e) { console.warn("Technicals fetch failed:", e); }
+  }, []);
+
   useEffect(() => { fetchLiveData(); }, [fetchLiveData]);
+  useEffect(() => {
+    const t = setTimeout(() => fetchTechnicals(), 2000);
+    const i = setInterval(() => fetchTechnicals(), 5 * 60 * 1000);
+    return () => { clearTimeout(t); clearInterval(i); };
+  }, [fetchTechnicals]);
   useEffect(() => { const i = setInterval(() => { fetchLiveData(); setCountdown(15); }, 15000); return () => clearInterval(i); }, [fetchLiveData]);
   useEffect(() => { const i = setInterval(() => setCountdown(c => c > 0 ? c - 1 : 15), 1000); return () => clearInterval(i); }, []);
 
@@ -311,10 +371,32 @@ export default function App() {
 
   const fmtMktCap = n => { if (!n) return "N/A"; if (n >= 1e12) return `$${(n/1e12).toFixed(2)}T`; if (n >= 1e9) return `$${(n/1e9).toFixed(1)}B`; return `$${n}`; };
 
+  // Get live technical value — falls back to static hardcoded data if API hasn't loaded yet
+  const getTech = (ticker, field) => {
+    const ld = liveData[ticker];
+    if (ld && ld[field] !== null && ld[field] !== undefined) return ld[field];
+    return staticData[ticker][field]; // fallback to hardcoded
+  };
+
   const totals = totalStats();
   const portfolioValue = livePortfolioValue();
   const todayPct = todayPortfolioPct();
   const data = staticData[selected];
+
+  // Get active signal recommendations using live technical values
+  const getActiveRecs = (ticker) => {
+    const rsi = getTech(ticker, "rsi");
+    const aboveMa50 = getTech(ticker, "aboveMa50");
+    const aboveMa200 = getTech(ticker, "aboveMa200");
+    const active = [];
+    if (rsi !== null && rsi < 30) active.push({ type: "opportunity", msg: `RSI at ${rsi} — oversold. Historically a buying opportunity for long-term investors. Wait for one green day to confirm selling is done before adding.` });
+    if (rsi !== null && rsi > 70) active.push({ type: "caution", msg: `RSI at ${rsi} — overbought. Don't chase here. Wait for a pullback before adding more.` });
+    if (aboveMa50 === false) active.push({ type: "caution", msg: `Below 50-day MA. Short-term momentum is negative. Watch for a reclaim of the 50MA on volume as a re-entry signal.` });
+    if (aboveMa200 === false) active.push({ type: "warning", msg: `Below 200-day MA. Long-term trend is negative. Re-examine your thesis — if fundamentals are intact this may be a deep value entry. If thesis has changed, consider reducing.` });
+    if (active.length === 0 && aboveMa50 && aboveMa200 && rsi > 30 && rsi < 70) active.push({ type: "healthy", msg: `All signals healthy — above both moving averages with RSI in neutral zone. No action needed.` });
+    return active;
+  };
+  const activeRecs = getActiveRecs(selected);
   const live = liveData[selected];
 
   // DCA Calculator
@@ -514,17 +596,30 @@ export default function App() {
         </div>
       </div>
 
-      {/* Tabs */}
-      <div className="tabs" style={{ display: "flex", overflowX: "auto", background: "white", borderBottom: "2px solid #f0f0f0", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", scrollbarWidth: "none" }}>
-        {TABS.map((tab, i) => (
-          <button key={i} onClick={() => setActiveTab(i)} style={{ flex: 1, padding: "14px 4px", border: "none", background: activeTab === i ? "linear-gradient(180deg, #f5f3ff 0%, white 100%)" : "none", color: activeTab === i ? "#667eea" : "#aaa", fontWeight: activeTab === i ? 800 : 500, fontSize: "12.5px", cursor: "pointer", borderBottom: activeTab === i ? "3px solid #667eea" : "3px solid transparent", whiteSpace: "nowrap", transition: "all 0.2s ease", textAlign: "center", letterSpacing: activeTab === i ? "-0.2px" : 0 }}>{tab}</button>
+      {/* ── TOP-LEVEL SECTION NAV ── */}
+      <div style={{ display: "flex", background: "white", borderBottom: "2px solid #f0f0f0", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", position: "sticky", top: 0, zIndex: 200 }}>
+        {NAV.map((section, si) => (
+          <button key={si} onClick={() => { setActiveSection(si); setActiveTab(0); }} style={{ flex: 1, padding: "13px 4px", border: "none", background: activeSection === si ? `${section.color}12` : "white", color: activeSection === si ? section.color : "#999", fontWeight: activeSection === si ? 800 : 500, fontSize: 11, cursor: "pointer", borderBottom: activeSection === si ? `3px solid ${section.color}` : "3px solid transparent", transition: "all 0.2s", letterSpacing: -0.2, whiteSpace: "nowrap" }}>
+            {section.label}
+          </button>
         ))}
       </div>
+
+      {/* ── SUB-TAB NAV ── */}
+      {NAV[activeSection].tabs.length > 1 && (
+        <div style={{ display: "flex", background: "white", borderBottom: "1px solid #f0f0f0", overflowX: "auto", scrollbarWidth: "none", padding: "0 4px" }}>
+          {NAV[activeSection].tabs.map((tab, ti) => (
+            <button key={ti} onClick={() => setActiveTab(ti)} style={{ flexShrink: 0, padding: "9px 16px", border: "none", background: "none", color: activeTab === ti ? NAV[activeSection].color : "#bbb", fontWeight: activeTab === ti ? 800 : 500, fontSize: 12.5, cursor: "pointer", borderBottom: activeTab === ti ? `2px solid ${NAV[activeSection].color}` : "2px solid transparent", whiteSpace: "nowrap", transition: "all 0.2s" }}>
+              {tab}
+            </button>
+          ))}
+        </div>
+      )}
 
       <div style={{ maxWidth: 680, margin: "0 auto", padding: "20px 16px 0" }}>
 
         {/* ── TAB 0: PORTFOLIO ── */}
-        {activeTab === 0 && (
+        {activeSection === 0 && activeTab === 0 && (
           <div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 16, justifyContent: "center" }}>
               {Object.keys(staticData).map(ticker => {
@@ -580,14 +675,15 @@ export default function App() {
                   </div>
                   {/* 52-week progress bar */}
                   <div style={{ marginBottom: 10 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#aaa", fontWeight: 600, marginBottom: 4 }}>
-                      <span>52W Low: ${data.week52Low}</span>
+                    {(() => { const low = live.week52Low || data.week52Low; const high = live.week52High || data.week52High; return (
+                    <><div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, color: "#aaa", fontWeight: 600, marginBottom: 4 }}>
+                      <span>52W Low: ${low}</span>
                       <span style={{ color: data.accent, fontWeight: 800 }}>Current: ${live.price}</span>
-                      <span>52W High: ${data.week52High}</span>
+                      <span>52W High: ${high}</span>
                     </div>
                     <div style={{ background: "#f0f0f0", borderRadius: 100, height: 8, overflow: "hidden", position: "relative" }}>
-                      <div style={{ width: `${Math.min(100, Math.max(0, ((parseFloat(live.price) - data.week52Low) / (data.week52High - data.week52Low)) * 100))}%`, height: "100%", background: data.gradient, borderRadius: 100, transition: "width 0.8s ease" }} />
-                    </div>
+                      <div style={{ width: `${Math.min(100, Math.max(0, ((parseFloat(live.price) - low) / (high - low)) * 100))}%`, height: "100%", background: data.gradient, borderRadius: 100, transition: "width 0.8s ease" }} />
+                    </div></> ); })()}
                   </div>
                   {/* Analyst target bar */}
                   {data.analystTarget && (
@@ -604,18 +700,68 @@ export default function App() {
                 </div>
               )}
 
-              {/* Technical signals */}
-              <div style={{ padding: "12px 18px", borderBottom: "1px solid #f5f5f5", background: "#fafafa", display: "flex", gap: 8, flexWrap: "wrap" }}>
-                <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginRight: 4, paddingTop: 2 }}>📡 Technicals:</div>
-                {[
-                  { label: `RSI ${data.rsi}`, ok: data.rsi > 30 && data.rsi < 70, warn: data.rsi >= 70, color: data.rsi < 30 ? "#ef4444" : data.rsi > 70 ? "#f59e0b" : "#10b981" },
-                  { label: data.aboveMa50 ? "Above 50MA ✅" : "Below 50MA ⚠️", color: data.aboveMa50 ? "#10b981" : "#f59e0b" },
-                  { label: data.aboveMa200 ? "Above 200MA ✅" : "Below 200MA ❌", color: data.aboveMa200 ? "#10b981" : "#ef4444" },
-                  { label: `Earnings: ${data.earningsDate}`, color: "#6366f1" },
-                ].map((s, i) => (
-                  <div key={i} style={{ background: `${s.color}15`, border: `1px solid ${s.color}30`, borderRadius: 100, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: s.color }}>{s.label}</div>
-                ))}
-              </div>
+              {/* Technical signals — live calculated */}
+              {(() => {
+                const rsi = getTech(selected, "rsi");
+                const aboveMa50 = getTech(selected, "aboveMa50");
+                const aboveMa200 = getTech(selected, "aboveMa200");
+                const ma50 = getTech(selected, "ma50");
+                const ma200 = getTech(selected, "ma200");
+                const liveRsi = live?.rsi != null;
+
+                // Generate smart recommendation
+                const warnings = [];
+                if (rsi !== null && rsi < 30) warnings.push({ type: "opportunity", msg: `RSI at ${rsi} — oversold territory. Historically a buying opportunity. Consider adding on the next green day.` });
+                if (rsi !== null && rsi > 70) warnings.push({ type: "caution", msg: `RSI at ${rsi} — overbought. Avoid chasing here. Wait for a pullback before adding.` });
+                if (aboveMa50 === false) warnings.push({ type: "caution", msg: `Below 50-day MA${ma50 ? ` ($${ma50})` : ""}. Short-term momentum is negative. Watch for a reclaim of the 50MA as a re-entry signal.` });
+                if (aboveMa200 === false) warnings.push({ type: "warning", msg: `Below 200-day MA${ma200 ? ` ($${ma200})` : ""}. Long-term trend is negative. Re-examine your thesis — if fundamentals are intact, this may be a deep value entry. If thesis has changed, consider reducing.` });
+                if (warnings.length === 0 && aboveMa50 && aboveMa200 && rsi > 30 && rsi < 70) warnings.push({ type: "healthy", msg: `All signals healthy — above both moving averages, RSI in neutral zone. No action needed.` });
+
+                return (
+                  <div style={{ borderBottom: "1px solid #f5f5f5" }}>
+                    <div style={{ padding: "12px 18px", background: "#fafafa", display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginRight: 4 }}>📡 Technicals {liveRsi ? "🟢 Live" : "📋 Est"}:</div>
+                      {[
+                        { label: rsi !== null ? `RSI ${rsi}` : "RSI —", color: !rsi ? "#aaa" : rsi < 30 ? "#ef4444" : rsi > 70 ? "#f59e0b" : "#10b981" },
+                        { label: aboveMa50 === null ? "50MA —" : aboveMa50 ? "Above 50MA ✅" : "Below 50MA ⚠️", color: aboveMa50 === null ? "#aaa" : aboveMa50 ? "#10b981" : "#f59e0b" },
+                        { label: aboveMa200 === null ? "200MA —" : aboveMa200 ? "Above 200MA ✅" : "Below 200MA ❌", color: aboveMa200 === null ? "#aaa" : aboveMa200 ? "#10b981" : "#ef4444" },
+                        { label: `Earnings: ${data.earningsDate}`, color: "#6366f1" },
+                      ].map((s, i) => (
+                        <div key={i} style={{ background: `${s.color}15`, border: `1px solid ${s.color}30`, borderRadius: 100, padding: "3px 10px", fontSize: 11, fontWeight: 700, color: s.color }}>{s.label}</div>
+                      ))}
+                    </div>
+                    {/* Smart recommendation */}
+                    {warnings.map((w, i) => (
+                      <div key={i} style={{ margin: "0 12px 8px", borderRadius: 12, padding: "11px 14px", background: w.type === "healthy" ? "#f0fdf4" : w.type === "opportunity" ? "#eff6ff" : w.type === "caution" ? "#fffbeb" : "#fef2f2", border: `1.5px solid ${w.type === "healthy" ? "#86efac" : w.type === "opportunity" ? "#93c5fd" : w.type === "caution" ? "#fcd34d" : "#fca5a5"}`, display: "flex", gap: 10, alignItems: "flex-start" }}>
+                        <span style={{ fontSize: 16, flexShrink: 0 }}>{w.type === "healthy" ? "✅" : w.type === "opportunity" ? "💡" : w.type === "caution" ? "⚠️" : "🔴"}</span>
+                        <div>
+                          <div style={{ fontSize: 11, fontWeight: 800, color: w.type === "healthy" ? "#065f46" : w.type === "opportunity" ? "#1d4ed8" : w.type === "caution" ? "#92400e" : "#991b1b", letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 3 }}>{w.type === "healthy" ? "All Clear" : w.type === "opportunity" ? "Potential Opportunity" : w.type === "caution" ? "Proceed With Caution" : "Review Your Position"}</div>
+                          <div style={{ fontSize: 12.5, color: "#444", lineHeight: 1.6 }}>{w.msg}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Signal Recommendations */}
+              {activeRecs.length > 0 && (
+                <div style={{ padding: "12px 14px", borderBottom: "1px solid #f0f0f0" }}>
+                  {activeRecs.map((rec, i) => {
+                    const bgColor = rec.type === "healthy" ? "#f0fdf4" : rec.type === "opportunity" ? "#eff6ff" : rec.type === "warning" ? "#fef2f2" : "#fffbeb";
+                    const borderCol = rec.type === "healthy" ? "#10b981" : rec.type === "opportunity" ? "#3b82f6" : rec.type === "warning" ? "#ef4444" : "#f59e0b";
+                    const titleCol = rec.type === "healthy" ? "#065f46" : rec.type === "opportunity" ? "#1d4ed8" : rec.type === "warning" ? "#991b1b" : "#92400e";
+                    const icon = rec.type === "healthy" ? "✅" : rec.type === "opportunity" ? "💡" : rec.type === "warning" ? "🔴" : "⚠️";
+                    const label = rec.type === "healthy" ? "All Clear" : rec.type === "opportunity" ? "Potential Opportunity" : rec.type === "warning" ? "Review Your Position" : "Proceed With Caution";
+                    return (
+                      <div key={i} style={{ background: bgColor, border: `2px solid ${borderCol}30`, borderLeft: `4px solid ${borderCol}`, borderRadius: 14, padding: "14px 16px", marginBottom: i < activeRecs.length - 1 ? 10 : 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 800, color: titleCol, letterSpacing: 0.5, textTransform: "uppercase", marginBottom: 6 }}>{icon} {label}</div>
+                        <div style={{ fontSize: 13, color: "#444", lineHeight: 1.7 }}>{rec.msg}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {/* Field groups */}
               <div style={{ padding: 12 }}>
@@ -646,7 +792,7 @@ export default function App() {
         )}
 
         {/* ── TAB 1: MY P&L ── */}
-        {activeTab === 1 && (
+        {activeSection === 0 && activeTab === 1 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>My Portfolio P&L</div>
@@ -788,8 +934,221 @@ export default function App() {
           </div>
         )}
 
+        {/* ── DIVIDENDS TAB ── */}
+        {activeSection === 0 && activeTab === 2 && (() => {
+          const divRows = TICKERS.map(t => {
+            const d = staticData[t], pos = positions[t];
+            const shares = parseFloat(pos?.shares || 0);
+            const annualIncome = shares * d.annualDivPerShare;
+            const yieldOnCost = pos?.avgCost ? (d.annualDivPerShare / parseFloat(pos.avgCost)) * 100 : null;
+            return { ticker: t, emoji: d.emoji, accent: d.accent, yieldPct: d.dividendYieldPct, annualDivPerShare: d.annualDivPerShare, exDivDate: d.exDivDate, annualIncome, yieldOnCost, shares };
+          });
+          const totalAnnual = divRows.reduce((s, r) => s + r.annualIncome, 0);
+          return (
+            <div>
+              <div style={{ background: "linear-gradient(135deg, #10b981, #059669)", borderRadius: 20, padding: 20, marginBottom: 16, color: "white" }}>
+                <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 4 }}>Projected Annual Dividend Income</div>
+                <div style={{ fontSize: 36, fontWeight: 900 }}>${totalAnnual.toFixed(2)}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 16 }}>
+                  {[{ l: "Monthly", v: `$${(totalAnnual/12).toFixed(2)}` }, { l: "Quarterly", v: `$${(totalAnnual/4).toFixed(2)}` }].map((s,i) => (
+                    <div key={i} style={{ background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: 12, textAlign: "center" }}>
+                      <div style={{ fontSize: 10, opacity: 0.75, marginBottom: 4 }}>{s.l}</div>
+                      <div style={{ fontSize: 20, fontWeight: 900 }}>{s.v}</div>
+                    </div>
+                  ))}
+                </div>
+                {!hasPositions && <div style={{ marginTop: 10, fontSize: 11, opacity: 0.75, textAlign: "center" }}>💡 Enter positions in P&L tab to see income based on your actual shares</div>}
+              </div>
+
+              <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 16, padding: "14px 16px", marginBottom: 16 }}>
+                <div style={{ fontWeight: 800, fontSize: 13, color: "#065f46", marginBottom: 6 }}>📚 What are dividends?</div>
+                <div style={{ fontSize: 12.5, color: "#166534", lineHeight: 1.7 }}>Dividends are cash payments companies make to you just for owning their stock — typically quarterly. VXUS pays the most (~2.8%/yr). NVDA pays almost nothing (0.03%) — it reinvests profits into growth instead. Neither is wrong: high yield = income now, low yield = growth later.</div>
+              </div>
+
+              <div style={{ background: "white", borderRadius: 20, overflow: "hidden", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 16 }}>
+                <div style={{ padding: "14px 18px", borderBottom: "1px solid #f5f5f5", fontWeight: 800, fontSize: 14 }}>Position Breakdown</div>
+                {divRows.map((r, i) => (
+                  <div key={i} style={{ padding: "14px 18px", borderBottom: i < divRows.length-1 ? "1px solid #f5f5f5" : "none" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: r.shares > 0 ? 8 : 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: 18 }}>{r.emoji}</span>
+                        <div>
+                          <div style={{ fontWeight: 800, fontSize: 13 }}>{r.ticker}</div>
+                          <div style={{ fontSize: 11, color: "#888" }}>Ex-Div: {r.exDivDate}</div>
+                        </div>
+                      </div>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 800, color: "#10b981" }}>{r.yieldPct}% yield</div>
+                        <div style={{ fontSize: 11, color: "#888" }}>${r.annualDivPerShare}/share/yr</div>
+                      </div>
+                    </div>
+                    {r.shares > 0 && (
+                      <div style={{ background: "#f0fdf4", borderRadius: 10, padding: "8px 12px", display: "flex", justifyContent: "space-between" }}>
+                        <div style={{ fontSize: 11, color: "#166534" }}>Your {r.shares} shares earn:</div>
+                        <div style={{ fontSize: 12, fontWeight: 800, color: "#059669" }}>${r.annualIncome.toFixed(2)}/yr · ${(r.annualIncome/12).toFixed(2)}/mo</div>
+                      </div>
+                    )}
+                    {r.yieldOnCost && <div style={{ fontSize: 10, color: "#888", marginTop: 4, textAlign: "right" }}>Yield on cost: {r.yieldOnCost.toFixed(2)}%</div>}
+                  </div>
+                ))}
+              </div>
+
+              <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 6 }}>📅 Upcoming Ex-Dividend Dates</div>
+                <div style={{ fontSize: 12, color: "#888", marginBottom: 12 }}>You must own shares BEFORE the ex-div date to receive the payment</div>
+                {divRows.filter(r => r.exDivDate !== "N/A").sort((a,b) => new Date(a.exDivDate) - new Date(b.exDivDate)).map((r,i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 0", borderBottom: "1px solid #f5f5f5" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 16 }}>{r.emoji}</span>
+                      <span style={{ fontWeight: 700, fontSize: 13 }}>{r.ticker}</span>
+                    </div>
+                    <div style={{ textAlign: "right" }}>
+                      <div style={{ fontWeight: 700, color: "#10b981", fontSize: 12 }}>{r.exDivDate}</div>
+                      <div style={{ fontSize: 10, color: "#888" }}>${r.annualDivPerShare}/share annually</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── BENCHMARK TAB ── */}
+        {activeSection === 0 && activeTab === 3 && (
+          <div>
+            <div style={{ fontSize: 20, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #764ba2)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: 16 }}>📈 Benchmark Comparison</div>
+            <div style={{ background: "#eff6ff", border: "1.5px solid #93c5fd", borderRadius: 16, padding: "14px 16px", marginBottom: 16 }}>
+              <div style={{ fontWeight: 800, fontSize: 13, color: "#1d4ed8", marginBottom: 6 }}>📚 What is benchmarking?</div>
+              <div style={{ fontSize: 12.5, color: "#1e40af", lineHeight: 1.7 }}>Benchmarking means comparing your returns to a market index. If the S&P 500 gains 10% and you gain 14% — you beat the market. Most professional fund managers fail to beat the S&P 500 over 10+ years. That's why VTI (which IS the market) anchors your portfolio.</div>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
+              {[["1mo","1 Month"],["3mo","3 Months"],["6mo","6 Months"],["1y","1 Year"]].map(([v,l]) => (
+                <button key={v} onClick={() => setBenchmarkRange(v)} style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: `2px solid ${benchmarkRange===v?"#667eea":"#eee"}`, background: benchmarkRange===v?"#667eea":"white", color: benchmarkRange===v?"white":"#555", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>{l}</button>
+              ))}
+            </div>
+            <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 12 }}>Your Portfolio vs Market</div>
+              {!hasPositions ? (
+                <div style={{ textAlign: "center", color: "#bbb", fontSize: 13, padding: 24 }}>Enter your positions in P&L tab to see your performance vs benchmarks</div>
+              ) : portfolioHistory.length < 2 ? (
+                <div style={{ textAlign: "center", color: "#667eea", fontSize: 13, padding: 24, background: "#f0f4ff", borderRadius: 12 }}>📡 Collecting data... chart builds after a few price refreshes</div>
+              ) : (
+                <div style={{ fontSize: 12, color: "#888", textAlign: "center", padding: 16 }}>📊 Live benchmark data loads from Yahoo Finance — check back after a few refreshes for full comparison</div>
+              )}
+            </div>
+            <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+              <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 14 }}>What Each Benchmark Means</div>
+              {[
+                { name: "S&P 500 (SPY)", color: "#f59e0b", desc: "500 largest U.S. companies. The gold standard. If you can't beat this consistently, you're better off just buying SPY.", q: "Am I beating the market?" },
+                { name: "Nasdaq 100 (QQQ)", color: "#10b981", desc: "Top 100 tech-heavy companies. Your portfolio is ~51% tech — you should outperform QQQ on good tech days. If you consistently trail QQQ, your stock picks aren't adding alpha over just owning QQQ.", q: "Is my tech stock picking beating QQQ?" },
+                { name: "VTI (Total Market)", color: "#2e86c1", desc: "All 4,000+ U.S. stocks. You own this directly. Your active positions should beat VTI — otherwise, put 100% in VTI and simplify your life.", q: "Are my stock picks worth the concentration risk?" },
+              ].map((b,i) => (
+                <div key={i} style={{ padding: "12px 0", borderBottom: i<2 ? "1px solid #f5f5f5" : "none" }}>
+                  <div style={{ fontWeight: 800, fontSize: 13, color: b.color, marginBottom: 4 }}>{b.name}</div>
+                  <div style={{ fontSize: 12.5, color: "#555", lineHeight: 1.6, marginBottom: 4 }}>{b.desc}</div>
+                  <div style={{ fontSize: 11, color: "#888", fontStyle: "italic" }}>❓ {b.q}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* ── JOURNAL TAB ── */}
+        {activeSection === 0 && activeTab === 4 && (
+          <div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <div style={{ fontSize: 20, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>📓 Trade Journal</div>
+              <button onClick={() => setShowTradeForm(!showTradeForm)} style={{ background: "#667eea", color: "white", border: "none", borderRadius: 100, padding: "8px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{showTradeForm ? "✕ Cancel" : "+ Log Trade"}</button>
+            </div>
+            <div style={{ background: "#f5f3ff", border: "1.5px solid #c4b5fd", borderRadius: 16, padding: "14px 16px", marginBottom: 16 }}>
+              <div style={{ fontWeight: 800, fontSize: 13, color: "#5b21b6", marginBottom: 6 }}>📚 Why keep a trade journal?</div>
+              <div style={{ fontSize: 12.5, color: "#4c1d95", lineHeight: 1.7 }}>Ray Dalio, Peter Lynch, Warren Buffett all kept detailed records of their decisions and WHY they made them. Writing your thesis BEFORE you act makes you more disciplined. Looking back lets you learn: were your reasons good? This is how casual investors become great ones.</div>
+            </div>
+            {showTradeForm && (
+              <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 4px 20px rgba(102,126,234,0.15)" }}>
+                <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 14 }}>Log a Trade</div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 10 }}>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#888", fontWeight: 600, marginBottom: 4 }}>Ticker</div>
+                    <select value={tradeForm.ticker} onChange={e => setTradeForm(p=>({...p,ticker:e.target.value}))} style={{ width: "100%", padding: "8px 10px", borderRadius: 10, border: "1.5px solid #eee", fontSize: 12 }}>
+                      {TICKERS.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#888", fontWeight: 600, marginBottom: 4 }}>Action</div>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      {["BUY","SELL"].map(a => <button key={a} onClick={() => setTradeForm(p=>({...p,action:a}))} style={{ flex:1, padding:"8px 4px", borderRadius:10, border:`2px solid ${tradeForm.action===a?(a==="BUY"?"#10b981":"#ef4444"):"#eee"}`, background:tradeForm.action===a?(a==="BUY"?"#10b981":"#ef4444"):"white", color:tradeForm.action===a?"white":"#555", fontWeight:800, fontSize:11, cursor:"pointer" }}>{a}</button>)}
+                    </div>
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 11, color: "#888", fontWeight: 600, marginBottom: 4 }}>Date</div>
+                    <input type="date" value={tradeForm.date} onChange={e => setTradeForm(p=>({...p,date:e.target.value}))} style={{ width:"100%", padding:"8px 10px", borderRadius:10, border:"1.5px solid #eee", fontSize:12 }} />
+                  </div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 10 }}>
+                  <div><div style={{ fontSize:11,color:"#888",fontWeight:600,marginBottom:4 }}>Shares</div><input type="number" value={tradeForm.shares} onChange={e=>setTradeForm(p=>({...p,shares:e.target.value}))} placeholder="0.00" style={{ width:"100%",padding:"8px 12px",borderRadius:10,border:"1.5px solid #eee",fontSize:13 }} /></div>
+                  <div><div style={{ fontSize:11,color:"#888",fontWeight:600,marginBottom:4 }}>Price/share</div><input type="number" value={tradeForm.price} onChange={e=>setTradeForm(p=>({...p,price:e.target.value}))} placeholder="$0.00" style={{ width:"100%",padding:"8px 12px",borderRadius:10,border:"1.5px solid #eee",fontSize:13 }} /></div>
+                </div>
+                <div style={{ marginBottom: 12 }}>
+                  <div style={{ fontSize:11,color:"#888",fontWeight:600,marginBottom:4 }}>Your Thesis — Why did you make this trade?</div>
+                  <textarea value={tradeForm.thesis} onChange={e=>setTradeForm(p=>({...p,thesis:e.target.value}))} placeholder="e.g. CEG down 24% on policy noise, not fundamentals. Nuclear PPA deals accelerating. Adding at discount..." style={{ width:"100%",padding:"10px 12px",borderRadius:10,border:"1.5px solid #eee",fontSize:12,lineHeight:1.6,resize:"vertical",minHeight:80,fontFamily:"inherit" }} />
+                </div>
+                <button onClick={() => {
+                  if (!tradeForm.shares || !tradeForm.price) return;
+                  setTradeLog(prev => [{ ...tradeForm, id: Date.now(), total: (parseFloat(tradeForm.shares)*parseFloat(tradeForm.price)).toFixed(2) }, ...prev]);
+                  setTradeForm(p => ({ ...p, shares:"", price:"", thesis:"" }));
+                  setShowTradeForm(false);
+                }} style={{ width:"100%",padding:12,background:"linear-gradient(135deg,#667eea,#764ba2)",color:"white",border:"none",borderRadius:12,fontWeight:800,fontSize:14,cursor:"pointer" }}>
+                  Save to Journal
+                </button>
+              </div>
+            )}
+            {tradeLog.length === 0 ? (
+              <div style={{ background:"white",borderRadius:20,padding:32,textAlign:"center",boxShadow:"0 2px 12px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize:40,marginBottom:12 }}>📓</div>
+                <div style={{ fontWeight:700,color:"#555",marginBottom:6 }}>No trades logged yet</div>
+                <div style={{ fontSize:13,color:"#aaa" }}>Tap "+ Log Trade" to record your first entry</div>
+              </div>
+            ) : (
+              <div style={{ display:"grid", gap:12 }}>
+                {tradeLog.map((trade) => {
+                  const d = staticData[trade.ticker];
+                  return (
+                    <div key={trade.id} style={{ background:"white",borderRadius:20,overflow:"hidden",boxShadow:"0 2px 12px rgba(0,0,0,0.06)",borderLeft:`5px solid ${trade.action==="BUY"?"#10b981":"#ef4444"}` }}>
+                      <div style={{ padding:"14px 18px" }}>
+                        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
+                          <div style={{ display:"flex",alignItems:"center",gap:8 }}>
+                            <span style={{ fontSize:20 }}>{d.emoji}</span>
+                            <div>
+                              <div style={{ display:"flex",alignItems:"center",gap:6 }}>
+                                <span style={{ fontWeight:900,fontSize:15 }}>{trade.ticker}</span>
+                                <span style={{ background:trade.action==="BUY"?"#10b981":"#ef4444",color:"white",borderRadius:100,padding:"2px 8px",fontSize:10,fontWeight:800 }}>{trade.action}</span>
+                              </div>
+                              <div style={{ fontSize:11,color:"#888",marginTop:2 }}>{trade.date} · {trade.shares} shares @ ${trade.price}</div>
+                            </div>
+                          </div>
+                          <div style={{ textAlign:"right" }}>
+                            <div style={{ fontWeight:900,fontSize:16,color:trade.action==="BUY"?"#10b981":"#ef4444" }}>${trade.total}</div>
+                            <div style={{ fontSize:10,color:"#aaa" }}>{trade.action==="BUY"?"invested":"received"}</div>
+                          </div>
+                        </div>
+                        {trade.thesis && (
+                          <div style={{ background:"#f8f8ff",borderRadius:10,padding:"10px 12px" }}>
+                            <div style={{ fontSize:10,fontWeight:700,color:"#667eea",marginBottom:4,textTransform:"uppercase",letterSpacing:0.5 }}>Your Thesis</div>
+                            <div style={{ fontSize:12,color:"#555",lineHeight:1.6 }}>{trade.thesis}</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {/* ── TAB 2: HEAT MAP ── */}
-        {activeTab === 2 && (
+        {activeSection === 1 && activeTab === 0 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}>
               <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Portfolio Heat Map</div>
@@ -887,7 +1246,7 @@ export default function App() {
         )}
 
         {/* ── TAB 3: NEWS ── */}
-        {activeTab === 3 && (
+        {activeSection === 1 && activeTab === 1 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Market News</div>
@@ -921,7 +1280,7 @@ export default function App() {
         )}
 
         {/* ── TAB 4: CALENDAR ── */}
-        {activeTab === 4 && (
+        {activeSection === 1 && activeTab === 2 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 14 }}>
               <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Earnings & Economic Calendar</div>
@@ -981,7 +1340,7 @@ export default function App() {
         )}
 
         {/* ── TAB 5: METRICS ── */}
-        {activeTab === 5 && (
+        {activeSection === 1 && activeTab === 3 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}>
               <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Your Stock Metrics</div>
@@ -1052,7 +1411,7 @@ export default function App() {
         )}
 
         {/* ── TABS 6-12: Reuse existing content ── */}
-        {activeTab === 6 && (
+        {activeSection === 2 && activeTab === 0 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Due Diligence Guide</div></div>
             {[{ cat: "📊 Valuation", color: "#3b82f6", items: [{ n: "Forward P/E", d: "Under 15x = cheap. 15–25x = fair. 25–40x = growth premium. 40x+ = must execute perfectly.", t: "Always compare to sector average. A 40x P/E for a semiconductor growing 60% YoY is reasonable." }, { n: "PEG Ratio", d: "Under 1.0 = undervalued vs growth. 1–2 = fairly valued. Above 2 = expensive.", t: "Best metric for growth stocks. P/E ÷ earnings growth rate. AVGO's PEG of ~0.85 is why we own it." }, { n: "EV/EBITDA", d: "Under 10x = value. 10–15x = fair. 15–20x = premium. 20x+ = needs strong growth.", t: "Better than P/E for comparing companies with different debt levels." }] }, { cat: "📈 Growth", color: "#10b981", items: [{ n: "Revenue Growth (YoY)", d: "Under 5% = slow. 5–10% = steady. 10–20% = solid. 20–40% = strong. 40%+ = exceptional.", t: "Is it accelerating or decelerating? Decelerating is often more concerning than slow growth." }, { n: "Free Cash Flow (FCF)", d: "Positive and growing = healthy. The single most important number.", t: "Growing FCF means the company funds its own future. MSFT at $70B+ FCF is exceptional." }] }, { cat: "💪 Quality", color: "#8b5cf6", items: [{ n: "Return on Equity (ROE)", d: "Under 10% = below average. 10–15% = average. 15–20% = good. 20%+ = excellent.", t: "Warren Buffett's favorite metric. Consistent over 3–5 years is better than spiky." }, { n: "Debt-to-Equity", d: "Under 0.5x = conservative. 0.5–1.5x = manageable. 1.5–3x = elevated. Above 3x = high risk.", t: "AVGO is at 1.8x due to VMware acquisition — acceptable given FCF generated to pay it down." }] }, { cat: "🔍 6-Step Smell Test", color: "#f59e0b", items: [{ n: "Step 1 — Is it growing?", d: "Check revenue and EPS growth YoY. Accelerating or decelerating?", t: "" }, { n: "Step 2 — Is it fairly priced?", d: "Forward P/E and PEG. High P/E is ok IF PEG is under 2.0.", t: "" }, { n: "Step 3 — Is the business healthy?", d: "FCF positive? Margins stable or expanding? Debt manageable?", t: "" }, { n: "Step 4 — Is management good?", d: "ROE consistently above 15% over 3–5 years.", t: "" }, { n: "Step 5 — What could go wrong?", d: "Read the Risk Factors in the 10-K on SEC.gov.", t: "Most underused tool by retail investors." }, { n: "Step 6 — Sector context?", d: "Is this sector leading or lagging? Check Stockcharts RRG.", t: "" }] }].map((cat, ci) => (
@@ -1072,7 +1431,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 7 && (
+        {activeSection === 2 && activeTab === 1 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 14 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Swing Trading Prep</div></div>
             <div style={{ background: "linear-gradient(135deg, #fef3c7, #fde68a)", borderRadius: 16, padding: "14px 18px", marginBottom: 14, border: "2px solid #f59e0b40" }}>
@@ -1090,7 +1449,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 8 && (
+        {activeSection === 2 && activeTab === 2 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 14 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Sector Rotation</div><p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>Current rotation as of February 2026</p></div>
             {sectorRotation.map((s, i) => (
@@ -1106,7 +1465,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 9 && (
+        {activeSection === 2 && activeTab === 3 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Rules of Engagement</div></div>
             {rulesOfEngagement.map((item, i) => (
@@ -1120,7 +1479,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 10 && (
+        {activeSection === 2 && activeTab === 4 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Quarterly Review</div></div>
             <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 14 }}>
@@ -1148,7 +1507,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 11 && (
+        {activeSection === 2 && activeTab === 5 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Research Resources</div></div>
             {resources.map((res, i) => (
@@ -1162,7 +1521,7 @@ export default function App() {
           </div>
         )}
 
-        {activeTab === 12 && (
+        {activeSection === 3 && activeTab === 0 && (
           <div>
             <div style={{ textAlign: "center", marginBottom: 18 }}><div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>Watchlist</div><p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>Strong & moderate conviction — in priority order</p></div>
             {watchlistData.map((item, i) => (
