@@ -306,13 +306,31 @@ export default function App() {
   }, []);
 
   // SLOW fetch — technicals only, runs once on load then every 5 minutes
+  const [technicalsData, setTechnicalsData] = useState({});
+
   const fetchTechnicals = useCallback(async () => {
     try {
       const res = await fetch(`/api/quote?symbols=${TICKERS.join(",")}&mode=technicals`);
       if (!res.ok) return;
       const json = await res.json();
       if (Array.isArray(json) && json.length > 0) {
+        // Store technicals independently so timing doesn't matter
+        const mapped = {};
+        json.forEach(q => {
+          if (q?.symbol) mapped[q.symbol] = {
+            rsi: q.rsi,
+            ma50: q.ma50,
+            ma200: q.ma200,
+            aboveMa50: q.aboveMa50,
+            aboveMa200: q.aboveMa200,
+            week52High: q.week52High,
+            week52Low: q.week52Low,
+          };
+        });
+        setTechnicalsData(mapped);
+        // Also merge into liveData if it exists
         setLiveData(prev => {
+          if (!Object.keys(prev).length) return prev;
           const updated = { ...prev };
           json.forEach(q => {
             if (q?.symbol && updated[q.symbol]) {
@@ -336,9 +354,10 @@ export default function App() {
 
   useEffect(() => { fetchLiveData(); }, [fetchLiveData]);
   useEffect(() => {
-    const t = setTimeout(() => fetchTechnicals(), 2000);
+    // Run immediately, then every 5 minutes
+    fetchTechnicals();
     const i = setInterval(() => fetchTechnicals(), 5 * 60 * 1000);
-    return () => { clearTimeout(t); clearInterval(i); };
+    return () => clearInterval(i);
   }, [fetchTechnicals]);
   useEffect(() => { const i = setInterval(() => { fetchLiveData(); setCountdown(15); }, 15000); return () => clearInterval(i); }, [fetchLiveData]);
   useEffect(() => { const i = setInterval(() => setCountdown(c => c > 0 ? c - 1 : 15), 1000); return () => clearInterval(i); }, []);
@@ -377,8 +396,10 @@ export default function App() {
 
   const fmtMktCap = n => { if (!n) return "N/A"; if (n >= 1e12) return `$${(n/1e12).toFixed(2)}T`; if (n >= 1e9) return `$${(n/1e9).toFixed(1)}B`; return `$${n}`; };
 
-  // Get live technical value — falls back to static hardcoded data if API hasn't loaded yet
+  // Get live technical value — checks technicalsData first, then liveData, then static fallback
   const getTech = (ticker, field) => {
+    const td = technicalsData[ticker];
+    if (td && td[field] !== null && td[field] !== undefined) return td[field];
     const ld = liveData[ticker];
     if (ld && ld[field] !== null && ld[field] !== undefined) return ld[field];
     return staticData[ticker][field]; // fallback to hardcoded
@@ -826,7 +847,7 @@ export default function App() {
                 const aboveMa200 = getTech(selected, "aboveMa200");
                 const ma50 = getTech(selected, "ma50");
                 const ma200 = getTech(selected, "ma200");
-                const liveRsi = live?.rsi != null;
+                const liveRsi = technicalsData[selected]?.rsi != null || live?.rsi != null;
 
                 // Generate smart recommendation
                 const warnings = [];
