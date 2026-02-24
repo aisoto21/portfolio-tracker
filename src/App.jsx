@@ -365,7 +365,7 @@ export default function App() {
   useEffect(() => {
     if (!lastUpdated || Object.keys(liveData).length === 0) return;
     const pct = TICKERS.reduce((s, t) => s + (liveData[t] ? parseFloat(liveData[t].changePct) * (staticData[t].allocation / 100) : 0), 0);
-    if (pct > 0.1) { const pieces = Array.from({ length: 60 }, (_, i) => ({ id: i, x: Math.random() * 100, color: ["#667eea","#f093fb","#4ade80","#fbbf24","#f87171","#34d399"][i % 6], size: Math.random() * 8 + 4, delay: Math.random() * 1.5, duration: Math.random() * 2 + 2 })); setConfetti(pieces); setTimeout(() => setConfetti([]), 4000); }
+    if (pct > 0.1 && !sessionStorage.getItem("confetti_shown")) { sessionStorage.setItem("confetti_shown", "1"); const pieces = Array.from({ length: 60 }, (_, i) => ({ id: i, x: Math.random() * 100, color: ["#667eea","#f093fb","#4ade80","#fbbf24","#f87171","#34d399"][i % 6], size: Math.random() * 8 + 4, delay: Math.random() * 1.5, duration: Math.random() * 2 + 2 })); setConfetti(pieces); setTimeout(() => setConfetti([]), 4000); }
   }, [lastUpdated]);
 
   const calcPnL = (ticker) => {
