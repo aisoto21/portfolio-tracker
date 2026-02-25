@@ -1061,9 +1061,7 @@ export default function App() {
                         </g>
                       ))}
                       {/* Open label — hide if 10AM tick is too close */}
-                      {!firstTickTooClose && <text x={4} y={H + 13} textAnchor="start" fontSize="7" fill="rgba(255,255,255,0.25)" fontWeight="600">Open</text>}
-                      {/* Now label */}
-                      <text x={W - 2} y={H + 13} textAnchor="end" fontSize="7" fill="rgba(255,255,255,0.25)" fontWeight="600">{nowTime}</text>
+                      {!firstTickTooClose && <text x={4} y={H + 13} textAnchor="start" fontSize="7" fill="rgba(255,255,255,0.2)" fontWeight="600">9:30</text>}
                       {/* Chart area and line */}
                       <path d={areaD} fill="url(#blendGrad)" />
                       <path d={pathD} fill="none" stroke="url(#blendLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
