@@ -1001,6 +1001,7 @@ export default function App() {
               const max = Math.max(...blended, 0.0001);
               const range = max - min || 0.001;
               const W = 300, H = 90;
+              const LABEL_H = 16; // extra space below chart for hour labels
               const toY = v => H - ((v - min) / range) * (H - 12) - 6;
               const svgPts = blended.map((v, i) => `${(i / (blended.length - 1)) * W},${toY(v)}`);
               const pathD = "M " + svgPts.join(" L ");
@@ -1009,7 +1010,22 @@ export default function App() {
               const lastY = toY(blended[blended.length - 1]);
               const zeroY = toY(0);
               const currentPct = blended[blended.length - 1] * 100;
-              const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+              const now = new Date();
+              const nowTime = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
+              // Generate hourly tick marks from 9:30 AM to current time
+              const marketOpen = new Date(); marketOpen.setHours(9, 30, 0, 0);
+              const totalMinutes = Math.max((now - marketOpen) / 60000, 1);
+              const hourTicks = [];
+              for (let h = 10; h <= 16; h++) {
+                const tickTime = new Date(); tickTime.setHours(h, 0, 0, 0);
+                if (tickTime > now) break;
+                const minsSinceOpen = (tickTime - marketOpen) / 60000;
+                const x = (minsSinceOpen / totalMinutes) * W;
+                const label = tickTime.toLocaleTimeString([], { hour: "numeric", hour12: true }).replace(":00", "").replace(" ", "");
+                hourTicks.push({ x, label });
+              }
+
               return (
                 <div style={{ width: "100%" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
@@ -1019,7 +1035,7 @@ export default function App() {
                     </span>
                   </div>
                   <div style={{ position: "relative" }}>
-                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", height: 90, filter: `drop-shadow(0 0 10px ${glowColor})` }}>
+                    <svg width="100%" viewBox={`0 0 ${W} ${H + LABEL_H}`} preserveAspectRatio="none" style={{ display: "block", height: H + LABEL_H, filter: `drop-shadow(0 0 10px ${glowColor})` }}>
                       <defs>
                         <linearGradient id="blendGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={c} stopOpacity="0.3" />
@@ -1030,16 +1046,26 @@ export default function App() {
                           <stop offset="100%" stopColor={c} stopOpacity="1" />
                         </linearGradient>
                       </defs>
+                      {/* Zero baseline */}
                       <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4,3" />
+                      {/* Hourly tick lines */}
+                      {hourTicks.map((t, i) => (
+                        <g key={i}>
+                          <line x1={t.x} y1={0} x2={t.x} y2={H} stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="2,4" />
+                          <line x1={t.x} y1={H} x2={t.x} y2={H + 5} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
+                          <text x={t.x} y={H + 13} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.3)" fontWeight="600">{t.label}</text>
+                        </g>
+                      ))}
+                      {/* Open label */}
+                      <text x={4} y={H + 13} textAnchor="start" fontSize="7" fill="rgba(255,255,255,0.25)" fontWeight="600">Open</text>
+                      {/* Now label */}
+                      <text x={W - 2} y={H + 13} textAnchor="end" fontSize="7" fill="rgba(255,255,255,0.25)" fontWeight="600">{nowTime}</text>
+                      {/* Chart area and line */}
                       <path d={areaD} fill="url(#blendGrad)" />
                       <path d={pathD} fill="none" stroke="url(#blendLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       <circle cx={lastX} cy={lastY} r="7" fill={c} opacity="0.2" />
                       <circle cx={lastX} cy={lastY} r="4" fill={c} />
                     </svg>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-                    <span style={{ fontSize: 9, opacity: 0.3, fontWeight: 700 }}>Open 9:30 AM</span>
-                    <span style={{ fontSize: 9, opacity: 0.3, fontWeight: 700 }}>Now {nowTime}</span>
                   </div>
                 </div>
               );
