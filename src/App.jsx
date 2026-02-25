@@ -932,7 +932,9 @@ export default function App() {
                 <div style={{ width: "100%" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                     <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, opacity: 0.4, textTransform: "uppercase" }}>Today's Journey</span>
-                    <span style={{ fontSize: 14, fontWeight: 900, color: c, letterSpacing: -0.5 }}>{currentPct >= 0 ? "▲" : "▼"}{Math.abs(currentPct).toFixed(2)}%</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: todayPct !== null ? (todayPct >= 0 ? "#4ade80" : "#f87171") : c, letterSpacing: -0.5 }}>
+                      {todayPct !== null ? `${todayPct >= 0 ? "▲" : "▼"}${Math.abs(todayPct).toFixed(2)}%` : `${currentPct >= 0 ? "▲" : "▼"}${Math.abs(currentPct).toFixed(2)}%`}
+                    </span>
                   </div>
                   <div style={{ position: "relative" }}>
                     <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", height: 90, filter: `drop-shadow(0 0 10px ${glowColor})` }}>
