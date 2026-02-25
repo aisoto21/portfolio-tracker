@@ -888,56 +888,74 @@ export default function App() {
             )}
           </div>
 
-          {/* CENTER — live portfolio sparkline */}
-          <div style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
+          {/* CENTER — full day blended portfolio chart from market open */}
+          <div style={{ flex: "1 1 240px", minWidth: 0, display: "flex", flexDirection: "column", justifyContent: "center" }}>
             {(() => {
-              const pts = chartData.filter(d => d.value != null);
-              if (pts.length < 2) {
-                // Show a gorgeous placeholder when no history yet
+              const tickersWithData = TICKERS.filter(t => sparklineData[t]?.points?.length > 1);
+              if (tickersWithData.length < 3) {
                 return (
-                  <div style={{ textAlign: "center", opacity: 0.4 }}>
-                    <div style={{ fontSize: 28, marginBottom: 6 }}>📈</div>
-                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, textTransform: "uppercase" }}>Today's Chart</div>
-                    <div style={{ fontSize: 10, opacity: 0.6, marginTop: 3 }}>Builds as market moves</div>
+                  <div style={{ textAlign: "center", padding: "20px 0" }}>
+                    <div style={{ fontSize: 32, marginBottom: 8, opacity: 0.3 }}>📊</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 1, opacity: 0.35, textTransform: "uppercase" }}>Portfolio Chart</div>
+                    <div style={{ fontSize: 10, opacity: 0.25, marginTop: 4 }}>Loading market data...</div>
                   </div>
                 );
               }
-              const vals = pts.map(d => d.value);
-              const minV = Math.min(...vals), maxV = Math.max(...vals), range = maxV - minV || 1;
-              const W = 220, H = 70;
-              const pathPts = vals.map((v, i) => `${(i / (vals.length - 1)) * W},${H - ((v - minV) / range) * (H - 10) - 5}`);
-              const pathD = "M " + pathPts.join(" L ");
-              const areaD = pathD + ` L ${W},${H} L 0,${H} Z`;
-              const isUp = vals[vals.length - 1] >= vals[0];
+              const maxLen = Math.max(...tickersWithData.map(t => sparklineData[t].points.length));
+              const blended = Array.from({ length: maxLen }, (_, i) => {
+                return tickersWithData.reduce((sum, t) => {
+                  const pts = sparklineData[t].points;
+                  const idx = Math.min(Math.floor(i / maxLen * pts.length), pts.length - 1);
+                  const open = pts[0];
+                  const val = pts[idx];
+                  const pctChange = open > 0 ? (val - open) / open : 0;
+                  return sum + pctChange * (staticData[t].allocation / 100);
+                }, 0);
+              });
+              const isUp = blended[blended.length - 1] >= 0;
               const c = isUp ? "#4ade80" : "#f87171";
-              const pctMove = ((vals[vals.length-1] - vals[0]) / vals[0] * 100);
+              const glowColor = isUp ? "rgba(74,222,128,0.5)" : "rgba(248,113,113,0.5)";
+              const min = Math.min(...blended, 0);
+              const max = Math.max(...blended, 0.0001);
+              const range = max - min || 0.001;
+              const W = 300, H = 90;
+              const toY = v => H - ((v - min) / range) * (H - 12) - 6;
+              const svgPts = blended.map((v, i) => `${(i / (blended.length - 1)) * W},${toY(v)}`);
+              const pathD = "M " + svgPts.join(" L ");
+              const areaD = pathD + ` L ${W},${H} L 0,${H} Z`;
               const lastX = W;
-              const lastY = H - ((vals[vals.length-1] - minV) / range) * (H - 10) - 5;
+              const lastY = toY(blended[blended.length - 1]);
+              const zeroY = toY(0);
+              const currentPct = blended[blended.length - 1] * 100;
+              const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
               return (
                 <div style={{ width: "100%" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, paddingLeft: 4, paddingRight: 4 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, opacity: 0.45, textTransform: "uppercase" }}>Today's Journey</span>
-                    <span style={{ fontSize: 12, fontWeight: 900, color: c }}>{isUp ? "▲" : "▼"}{Math.abs(pctMove).toFixed(2)}%</span>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                    <span style={{ fontSize: 10, fontWeight: 800, letterSpacing: 1.5, opacity: 0.4, textTransform: "uppercase" }}>Today's Journey</span>
+                    <span style={{ fontSize: 14, fontWeight: 900, color: c, letterSpacing: -0.5 }}>{currentPct >= 0 ? "▲" : "▼"}{Math.abs(currentPct).toFixed(2)}%</span>
                   </div>
-                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", height: 70 }}>
-                    <defs>
-                      <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={c} stopOpacity="0.25" />
-                        <stop offset="100%" stopColor={c} stopOpacity="0.02" />
-                      </linearGradient>
-                      <filter id="glow">
-                        <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
-                        <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
-                      </filter>
-                    </defs>
-                    <path d={areaD} fill="url(#heroGrad)" />
-                    <path d={pathD} fill="none" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" filter="url(#glow)" />
-                    <circle cx={lastX} cy={lastY} r="4" fill={c} filter="url(#glow)" />
-                    <circle cx={lastX} cy={lastY} r="8" fill={c} opacity="0.2" />
-                  </svg>
-                  <div style={{ display: "flex", justifyContent: "space-between", paddingLeft: 4, paddingRight: 4, marginTop: 4 }}>
-                    <span style={{ fontSize: 9, opacity: 0.3, fontWeight: 600 }}>{pts[0]?.time}</span>
-                    <span style={{ fontSize: 9, opacity: 0.3, fontWeight: 600 }}>{pts[pts.length-1]?.time}</span>
+                  <div style={{ position: "relative" }}>
+                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", height: 90, filter: `drop-shadow(0 0 10px ${glowColor})` }}>
+                      <defs>
+                        <linearGradient id="blendGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor={c} stopOpacity="0.3" />
+                          <stop offset="100%" stopColor={c} stopOpacity="0.02" />
+                        </linearGradient>
+                        <linearGradient id="blendLine" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor={c} stopOpacity="0.5" />
+                          <stop offset="100%" stopColor={c} stopOpacity="1" />
+                        </linearGradient>
+                      </defs>
+                      <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4,3" />
+                      <path d={areaD} fill="url(#blendGrad)" />
+                      <path d={pathD} fill="none" stroke="url(#blendLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                      <circle cx={lastX} cy={lastY} r="7" fill={c} opacity="0.2" />
+                      <circle cx={lastX} cy={lastY} r="4" fill={c} />
+                    </svg>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
+                    <span style={{ fontSize: 9, opacity: 0.3, fontWeight: 700 }}>Open 9:30 AM</span>
+                    <span style={{ fontSize: 9, opacity: 0.3, fontWeight: 700 }}>Now {nowTime}</span>
                   </div>
                 </div>
               );
