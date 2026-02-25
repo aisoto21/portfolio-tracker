@@ -664,8 +664,12 @@ export default function App() {
   // Donut charts
   const DonutChart = () => {
     const cx = 80, cy = 80, r = 54, sw = 22, circ = 2 * Math.PI * r;
+    const cash = parseFloat(cashReserves) || 0;
+    const totalAccount = (livePortfolioValue() || 0) + cash;
+    const investedPct = totalAccount > 0 ? Math.round((livePortfolioValue() || 0) / totalAccount * 100) : 100;
+    const cashPct = 100 - investedPct;
 
-    // Chart 1 — individual holdings
+    // Chart 1 — individual holdings (target allocations)
     let offset1 = 0;
     const slices = Object.entries(staticData).map(([ticker, d]) => {
       const dash = (d.allocation / 100) * circ;
@@ -674,17 +678,15 @@ export default function App() {
     });
 
     // Chart 2 — stock vs ETF breakdown
-    const stockPct = Object.entries(staticData).filter(([,d]) => !["VTI","VXUS"].includes(Object.keys(staticData).find(k => staticData[k] === d))).reduce((s,[t,d]) => {
-      if (!["VTI","VXUS"].includes(t)) return s + d.allocation; return s;
-    }, 0);
+    const stockPct = Object.entries(staticData).reduce((s,[t,d]) => !["VTI","VXUS"].includes(t) ? s + d.allocation : s, 0);
     const etfPct = 100 - stockPct;
     const stockDash = (stockPct / 100) * circ;
     const etfDash = (etfPct / 100) * circ;
 
-    // Chart 3 — bucket breakdown (Aggressive / Moderate / Anchor)
+    // Chart 3 — bucket breakdown
     const buckets = {};
     Object.entries(staticData).forEach(([t, d]) => {
-      const key = d.bucket.split("-")[0].split(" ")[0]; // "Aggressive", "Moderate", "Anchor"
+      const key = d.bucket.split("-")[0].split(" ")[0];
       buckets[key] = (buckets[key] || 0) + d.allocation;
     });
     const bucketColors = { Aggressive: "#ef4444", Moderate: "#f59e0b", Anchor: "#3b82f6" };
@@ -695,39 +697,76 @@ export default function App() {
       offset3 += dash; return s;
     });
 
+    // Chart 4 — deployed vs cash
+    const investedDash = (investedPct / 100) * circ;
+    const cashDash = (cashPct / 100) * circ;
+
     return (
       <div>
-        {/* Three donuts side by side */}
-        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 20 }}>
+        {/* Note */}
+        <div style={{ fontSize: 11, color: "#aaa", textAlign: "center", marginBottom: 14 }}>
+          Chart 1 shows <strong>live market value</strong>. Charts 2–3 show <strong>target allocations</strong>. Chart 4 shows <strong>cash vs deployed</strong>.
+        </div>
 
-          {/* Holdings donut */}
-          <div style={{ textAlign: "center" }}>
-            <svg width="140" height="140" viewBox="0 0 160 160">
-              {slices.map((s, i) => <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.accent} strokeWidth={sw} strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={-s.offset + circ / 4} style={{ cursor: "pointer", opacity: selected === s.ticker ? 1 : 0.65, transition: "opacity 0.2s" }} onClick={() => { setSelected(s.ticker); setActiveTab(0); }} />)}
-              <text x={cx} y={cy - 6} textAnchor="middle" fontSize="10" fill="#666" fontWeight="700">Holdings</text>
-              <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#999">7 stocks</text>
-            </svg>
-            <div style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>By Position</div>
-          </div>
+        {/* Four donuts — 2x2 grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+
+          {/* Actual Holdings donut — live $ weighted */}
+          {(() => {
+            const liveTotal = livePortfolioValue();
+            // Build actual slices from live price * shares
+            const actualSlices = TICKERS.map(t => {
+              const pos = positions[t], ld = liveData[t];
+              if (!pos?.shares || !pos?.avgCost || !ld?.price) return { ticker: t, pct: 0, accent: staticData[t].accent };
+              const val = parseFloat(ld.price) * parseFloat(pos.shares);
+              const pct = liveTotal > 0 ? (val / liveTotal) * 100 : 0;
+              return { ticker: t, pct, accent: staticData[t].accent };
+            });
+            const hasLive = actualSlices.some(s => s.pct > 0);
+            // Fall back to target allocations if no positions entered
+            const displaySlices = hasLive ? actualSlices : TICKERS.map(t => ({ ticker: t, pct: staticData[t].allocation, accent: staticData[t].accent }));
+            let offsetA = 0;
+            const liveSlices = displaySlices.map(s => {
+              const dash = (s.pct / 100) * circ;
+              const sl = { ...s, dash, gap: circ - dash, offset: offsetA };
+              offsetA += dash; return sl;
+            });
+            return (
+              <div style={{ textAlign: "center" }}>
+                <svg width="140" height="140" viewBox="0 0 160 160" style={{ width: "100%", maxWidth: 140 }}>
+                  {liveSlices.map((s, i) => s.pct > 0 && (
+                    <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.accent} strokeWidth={sw}
+                      strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={-s.offset + circ / 4}
+                      style={{ cursor: "pointer", opacity: selected === s.ticker ? 1 : 0.65, transition: "opacity 0.2s" }}
+                      onClick={() => { setSelected(s.ticker); setActiveTab(0); }} />
+                  ))}
+                  <text x={cx} y={cy - 6} textAnchor="middle" fontSize="10" fill="#666" fontWeight="700">Actual</text>
+                  <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#999">{hasLive ? "live $" : "target %"}</text>
+                </svg>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>Actual Holdings</div>
+                <div style={{ fontSize: 10, color: "#aaa" }}>{hasLive ? "by live market value" : "enter positions to see live"}</div>
+              </div>
+            );
+          })()}
 
           {/* Stock vs ETF donut */}
           <div style={{ textAlign: "center" }}>
-            <svg width="140" height="140" viewBox="0 0 160 160">
+            <svg width="140" height="140" viewBox="0 0 160 160" style={{ width: "100%", maxWidth: 140 }}>
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#667eea" strokeWidth={sw} strokeDasharray={`${stockDash} ${circ - stockDash}`} strokeDashoffset={circ / 4} />
               <circle cx={cx} cy={cy} r={r} fill="none" stroke="#10b981" strokeWidth={sw} strokeDasharray={`${etfDash} ${circ - etfDash}`} strokeDashoffset={circ / 4 - stockDash} />
               <text x={cx} y={cy - 6} textAnchor="middle" fontSize="11" fill="#333" fontWeight="800">{stockPct}%</text>
               <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#999">Stocks</text>
             </svg>
             <div style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>Stocks vs ETFs</div>
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 4 }}>
-              <span style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#667eea", display: "inline-block" }} />Stocks {stockPct}%</span>
-              <span style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />ETFs {etfPct}%</span>
+            <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 4, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#667eea", display: "inline-block" }} />{stockPct}%</span>
+              <span style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />{etfPct}%</span>
             </div>
           </div>
 
           {/* Risk bucket donut */}
           <div style={{ textAlign: "center" }}>
-            <svg width="140" height="140" viewBox="0 0 160 160">
+            <svg width="140" height="140" viewBox="0 0 160 160" style={{ width: "100%", maxWidth: 140 }}>
               {bucketSlices.map((s, i) => <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color} strokeWidth={sw} strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={-s.offset + circ / 4} />)}
               <text x={cx} y={cy - 6} textAnchor="middle" fontSize="10" fill="#666" fontWeight="700">Risk</text>
               <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#999">Mix</text>
@@ -740,6 +779,22 @@ export default function App() {
                 </span>
               ))}
             </div>
+          </div>
+
+          {/* Deployed vs Cash donut */}
+          <div style={{ textAlign: "center" }}>
+            <svg width="140" height="140" viewBox="0 0 160 160" style={{ width: "100%", maxWidth: 140 }}>
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#667eea" strokeWidth={sw} strokeDasharray={`${investedDash} ${circ - investedDash}`} strokeDashoffset={circ / 4} />
+              {cashPct > 0 && <circle cx={cx} cy={cy} r={r} fill="none" stroke="#fbbf24" strokeWidth={sw} strokeDasharray={`${cashDash} ${circ - cashDash}`} strokeDashoffset={circ / 4 - investedDash} />}
+              <text x={cx} y={cy - 6} textAnchor="middle" fontSize="11" fill="#333" fontWeight="800">{investedPct}%</text>
+              <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#999">deployed</text>
+            </svg>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>Deployed vs Cash</div>
+            <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 4, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#667eea", display: "inline-block" }} />Invested {investedPct}%</span>
+              {cashPct > 0 && <span style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#fbbf24", display: "inline-block" }} />Cash {cashPct}%</span>}
+            </div>
+            {cash === 0 && <div style={{ fontSize: 10, color: "#ccc", marginTop: 4 }}>Add cash in P&L → Edit</div>}
           </div>
         </div>
 
