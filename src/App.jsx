@@ -411,9 +411,18 @@ export default function App() {
     return { tc, tv, pnl: tv - tc, pct: tc > 0 ? ((tv - tc) / tc) * 100 : 0, n };
   };
 
+  const getEffectivePrice = (ticker) => {
+    const ld = liveData[ticker];
+    if (!ld) return null;
+    const state = ld.marketState;
+    if (state === "POST" && ld.postMarketPrice) return parseFloat(ld.postMarketPrice);
+    if (state === "PRE" && ld.preMarketPrice) return parseFloat(ld.preMarketPrice);
+    return parseFloat(ld.price);
+  };
+
   const livePortfolioValue = () => {
     let total = 0, has = false;
-    TICKERS.forEach(t => { const p = positions[t], ld = liveData[t]; if (p?.shares && p?.avgCost && ld?.price) { total += parseFloat(ld.price) * parseFloat(p.shares); has = true; } });
+    TICKERS.forEach(t => { const p = positions[t], ld = liveData[t]; const ep = getEffectivePrice(t); if (p?.shares && p?.avgCost && ep) { total += ep * parseFloat(p.shares); has = true; } });
     return has ? total : null;
   };
 
@@ -911,7 +920,14 @@ export default function App() {
               {loading
                 ? <div style={{ width: 6, height: 6, border: "1.5px solid rgba(255,255,255,0.3)", borderTop: "1.5px solid white", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
                 : <div style={{ width: 6, height: 6, borderRadius: "50%", background: apiError ? "#fbbf24" : "#4ade80", boxShadow: apiError ? "0 0 6px #fbbf24" : "0 0 10px #4ade80", animation: "pulse 2s ease-in-out infinite" }} />}
-              <span style={{ fontSize: 10, opacity: 0.5, fontWeight: 600, letterSpacing: 0.3 }}>{loading ? "Fetching..." : `Live · ${lastUpdated} · ↻${countdown}s`}</span>
+              <span style={{ fontSize: 10, opacity: 0.5, fontWeight: 600, letterSpacing: 0.3 }}>
+                {loading ? "Fetching..." : (() => {
+                  const states = TICKERS.map(t => liveData[t]?.marketState).filter(Boolean);
+                  const state = states[0];
+                  const badge = state === "POST" ? " · 🌙 After Hours" : state === "PRE" ? " · 🌅 Pre-Market" : state === "CLOSED" ? " · 🔴 Market Closed" : "";
+                  return `Live · ${lastUpdated} · ↻${countdown}s${badge}`;
+                })()}
+              </span>
             </div>
             <button onClick={fetchLiveData} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "white", borderRadius: 100, padding: "3px 10px", fontSize: 10, cursor: "pointer", fontWeight: 700 }}>↻</button>
             <button onClick={() => setShowNicknameModal(true)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "white", borderRadius: 100, padding: "3px 9px", fontSize: 11, cursor: "pointer" }}>✏️</button>
@@ -1115,13 +1131,26 @@ export default function App() {
                 const pct = ld ? parseFloat(ld.changePct) : null;
                 const isUp = pct != null ? pct >= 0 : true;
                 return (
-                  <span key={i} onClick={() => { setSelected(ticker); setActiveSection(0); setActiveTab(0); }} style={{ fontSize: 11, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
-                    <span style={{ opacity: 0.5 }}>{staticData[ticker].emoji}</span>
-                    <span style={{ fontWeight: 800 }}>{ticker}</span>
-                    {ld && <span>${parseFloat(ld.price).toFixed(2)}</span>}
-                    {pct != null && <span style={{ color: isUp ? "#4ade80" : "#f87171", fontWeight: 800 }}>{isUp ? "▲" : "▼"}{Math.abs(pct).toFixed(2)}%</span>}
-                    <span style={{ opacity: 0.15, marginLeft: 4 }}>|</span>
-                  </span>
+                  {(() => {
+                    const state = ld?.marketState;
+                    const isPost = state === "POST" && ld?.postMarketPrice;
+                    const isPre = state === "PRE" && ld?.preMarketPrice;
+                    const extPrice = isPost ? ld.postMarketPrice : isPre ? ld.preMarketPrice : null;
+                    const extPct = isPost ? ld.postMarketChangePct : isPre ? ld.preMarketChangePct : null;
+                    const displayPrice = extPrice || (ld ? parseFloat(ld.price) : null);
+                    const displayPct = extPct != null ? extPct : pct;
+                    const displayUp = displayPct != null ? displayPct >= 0 : true;
+                    return (
+                      <span key={i} onClick={() => { setSelected(ticker); setActiveSection(0); setActiveTab(0); }} style={{ fontSize: 11, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(255,255,255,0.85)" }}>
+                        <span style={{ opacity: 0.5 }}>{staticData[ticker].emoji}</span>
+                        <span style={{ fontWeight: 800 }}>{ticker}</span>
+                        {displayPrice && <span>${parseFloat(displayPrice).toFixed(2)}</span>}
+                        {displayPct != null && <span style={{ color: displayUp ? "#4ade80" : "#f87171", fontWeight: 800 }}>{displayUp ? "▲" : "▼"}{Math.abs(displayPct).toFixed(2)}%</span>}
+                        {(isPost || isPre) && <span style={{ fontSize: 9, background: isPost ? "rgba(251,191,36,0.2)" : "rgba(147,197,253,0.2)", color: isPost ? "#fbbf24" : "#93c5fd", borderRadius: 4, padding: "1px 4px", fontWeight: 800 }}>{isPost ? "AH" : "PM"}</span>}
+                        <span style={{ opacity: 0.15, marginLeft: 4 }}>|</span>
+                      </span>
+                    );
+                  })()}
                 );
               })}
             </div>
@@ -1262,9 +1291,23 @@ export default function App() {
                     <div style={{ display: "inline-block", marginTop: 8, background: "rgba(255,255,255,0.25)", borderRadius: 100, padding: "3px 12px", fontSize: 11, fontWeight: 600 }}>{data.tag}</div>
                   </div>
                   <div style={{ textAlign: "right" }}>
-                    <div className="price-animate" style={{ fontSize: 30, fontWeight: 900, lineHeight: 1 }}>{live ? `$${live.price}` : data.allocation + "%"}</div>
-                    <div style={{ fontSize: 11, opacity: 0.75, marginTop: 2 }}>{live ? "live price" : "of portfolio"}</div>
-                    {live && <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: parseFloat(live.changePct) >= 0 ? "#a8e063" : "#ffb3b3" }}>{parseFloat(live.changePct) >= 0 ? "▲" : "▼"}{Math.abs(parseFloat(live.changePct))}% today</div>}
+                    {(() => {
+                      const state = live?.marketState;
+                      const isPost = state === "POST" && live?.postMarketPrice;
+                      const isPre = state === "PRE" && live?.preMarketPrice;
+                      const extPrice = isPost ? live.postMarketPrice : isPre ? live.preMarketPrice : null;
+                      const extPct = isPost ? live.postMarketChangePct : isPre ? live.preMarketChangePct : null;
+                      const displayPrice = extPrice ? parseFloat(extPrice).toFixed(2) : live?.price;
+                      return (<>
+                        <div className="price-animate" style={{ fontSize: 30, fontWeight: 900, lineHeight: 1 }}>{live ? `$${displayPrice}` : data.allocation + "%"}</div>
+                        <div style={{ fontSize: 11, opacity: 0.75, marginTop: 2, display: "flex", alignItems: "center", gap: 5 }}>
+                          {live ? "live price" : "of portfolio"}
+                          {(isPost || isPre) && <span style={{ fontSize: 9, background: "rgba(251,191,36,0.3)", color: "#fbbf24", borderRadius: 4, padding: "1px 5px", fontWeight: 800 }}>{isPost ? "AFTER HRS" : "PRE-MKT"}</span>}
+                        </div>
+                        {live && <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4, color: parseFloat(live.changePct) >= 0 ? "#a8e063" : "#ffb3b3" }}>{parseFloat(live.changePct) >= 0 ? "▲" : "▼"}{Math.abs(parseFloat(live.changePct))}% today</div>}
+                        {extPct != null && <div style={{ fontSize: 12, fontWeight: 700, marginTop: 2, color: extPct >= 0 ? "#fbbf24" : "#f87171" }}>{extPct >= 0 ? "▲" : "▼"}{Math.abs(extPct).toFixed(2)}% {isPost ? "after hrs" : "pre-mkt"}</div>}
+                      </>);
+                    })()}
                   </div>
                 </div>
                 <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
