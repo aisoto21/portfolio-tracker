@@ -26,9 +26,10 @@ function calcSMA(closes, period) {
 // Fast fetch — just current price data (1d range)
 async function fetchPrice(ticker, retries = 3) {
   const symbol = ticker.startsWith("^") ? encodeURIComponent(ticker) : ticker;
+  // v7 quote endpoint — more reliable for after-hours/pre-market data
   const urls = [
-    `https://query1.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
-    `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?interval=1d&range=1d`,
+    `https://query1.finance.yahoo.com/v7/finance/quote?symbols=${symbol}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketDayHigh,regularMarketDayLow,marketCap,regularMarketVolume,fiftyTwoWeekHigh,fiftyTwoWeekLow,postMarketPrice,postMarketChange,postMarketChangePercent,preMarketPrice,preMarketChange,preMarketChangePercent,marketState,chartPreviousClose`,
+    `https://query2.finance.yahoo.com/v7/finance/quote?symbols=${symbol}&fields=regularMarketPrice,regularMarketChange,regularMarketChangePercent,regularMarketDayHigh,regularMarketDayLow,marketCap,regularMarketVolume,fiftyTwoWeekHigh,fiftyTwoWeekLow,postMarketPrice,postMarketChange,postMarketChangePercent,preMarketPrice,preMarketChange,preMarketChangePercent,marketState,chartPreviousClose`,
   ];
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
@@ -37,25 +38,25 @@ async function fetchPrice(ticker, retries = 3) {
       });
       if (!res.ok) { if (attempt < retries - 1) { await sleep(300 * (attempt + 1)); continue; } return null; }
       const data = await res.json();
-      const meta = data?.chart?.result?.[0]?.meta;
-      if (!meta?.regularMarketPrice) { if (attempt < retries - 1) { await sleep(300); continue; } return null; }
-      const price = meta.regularMarketPrice;
-      const prevClose = meta.chartPreviousClose || meta.previousClose || price;
+      const q = data?.quoteResponse?.result?.[0];
+      if (!q?.regularMarketPrice) { if (attempt < retries - 1) { await sleep(300); continue; } return null; }
+      const price = q.regularMarketPrice;
+      const prevClose = q.chartPreviousClose || q.regularMarketPreviousClose || price;
       const change = price - prevClose;
-      const postPrice = meta.postMarketPrice || null;
-      const prePrice = meta.preMarketPrice || null;
-      const postChange = postPrice ? ((postPrice - price) / price) * 100 : null;
-      const preChange = prePrice ? ((prePrice - price) / price) * 100 : null;
-      const marketState = meta.marketState || "REGULAR"; // REGULAR, POST, PRE, CLOSED
+      const postPrice = q.postMarketPrice || null;
+      const prePrice = q.preMarketPrice || null;
+      const postChange = q.postMarketChangePercent || (postPrice ? ((postPrice - price) / price) * 100 : null);
+      const preChange = q.preMarketChangePercent || (prePrice ? ((prePrice - price) / price) * 100 : null);
+      const marketState = q.marketState || "REGULAR";
       return {
         symbol: ticker, price, change,
-        changesPercentage: (change / prevClose) * 100,
-        dayHigh: meta.regularMarketDayHigh || null,
-        dayLow: meta.regularMarketDayLow || null,
-        marketCap: meta.marketCap || null,
-        volume: meta.regularMarketVolume || null,
-        week52High: meta.fiftyTwoWeekHigh || null,
-        week52Low: meta.fiftyTwoWeekLow || null,
+        changesPercentage: q.regularMarketChangePercent || (change / prevClose) * 100,
+        dayHigh: q.regularMarketDayHigh || null,
+        dayLow: q.regularMarketDayLow || null,
+        marketCap: q.marketCap || null,
+        volume: q.regularMarketVolume || null,
+        week52High: q.fiftyTwoWeekHigh || null,
+        week52Low: q.fiftyTwoWeekLow || null,
         postMarketPrice: postPrice,
         postMarketChangePct: postChange,
         preMarketPrice: prePrice,
