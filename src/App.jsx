@@ -895,7 +895,7 @@ export default function App() {
                   )}
                   {totals.tc > 0 && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                      <span style={{ fontSize: 11, opacity: 0.4, fontWeight: 600 }}>Cost ${totals.tc.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                      <span style={{ fontSize: 11, opacity: 0.4, fontWeight: 600 }}>Cost ${totals.tc.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       <span style={{ width: 1, height: 12, background: "rgba(255,255,255,0.15)", display: "inline-block" }} />
                       <span style={{ fontSize: 12, fontWeight: 800, color: totals.pnl >= 0 ? "#4ade80" : "#f87171", background: totals.pnl >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)", border: `1px solid ${totals.pnl >= 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`, borderRadius: 100, padding: "2px 10px" }}>
                         {totals.pnl >= 0 ? "+" : ""}${totals.pnl.toFixed(2)} · {totals.pnl >= 0 ? "▲" : "▼"}{Math.abs(totals.pct).toFixed(2)}%
