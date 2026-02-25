@@ -480,7 +480,7 @@ export default function App() {
   // Fetch real sparkline data for portfolio cards
   const fetchSparklines = useCallback(async () => {
     try {
-      const res = await fetch(`/api/sparkline?tickers=${TICKERS.join(",")}`);
+      const res = await fetch(`/api/sparkline?tickers=${TICKERS.join(",")},SPY,VTI,QQQ`);
       if (!res.ok) return;
       const json = await res.json();
       if (Array.isArray(json)) {
@@ -1614,46 +1614,135 @@ export default function App() {
               })()}
             </div>
 
-            <div style={{ display: "flex", gap: 6, marginBottom: 16 }}>
-              {[["1mo","1 Month"],["3mo","3 Months"],["6mo","6 Months"],["1y","1 Year"]].map(([v,l]) => (
-                <button key={v} onClick={() => setBenchmarkRange(v)} style={{ flex: 1, padding: "8px 4px", borderRadius: 10, border: `2px solid ${benchmarkRange===v?"#667eea":"#eee"}`, background: benchmarkRange===v?"#667eea":"white", color: benchmarkRange===v?"white":"#555", fontWeight: 700, fontSize: 11, cursor: "pointer" }}>{l}</button>
-              ))}
-            </div>
-
-            {/* Period Return Comparison */}
+            {/* Live 3-line comparison chart */}
             <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
-              <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 4 }}>📊 Period Returns</div>
-              <div style={{ fontSize: 11, color: "#aaa", marginBottom: 14 }}>Based on live benchmark price data</div>
+              <div style={{ fontWeight: 800, fontSize: 14, marginBottom: 2 }}>📊 Today: Your Portfolio vs The Market</div>
+              <div style={{ fontSize: 11, color: "#aaa", marginBottom: 16 }}>From market open · Live sparkline data · Updates every 5 min</div>
               {(() => {
-                const benchmarks = [
-                  { label: "S&P 500", ticker: "SPY", color: "#f59e0b", emoji: "🏆" },
-                  { label: "Nasdaq 100", ticker: "QQQ", color: "#10b981", emoji: "⚡" },
-                  { label: "Total Market", ticker: "VTI", color: "#2e86c1", emoji: "🇺🇸" },
+                const lines = [
+                  { key: "portfolio", label: "Your Portfolio", color: "#667eea", emoji: "💼" },
+                  { key: "VTI",       label: "VTI (Total Mkt)", color: "#10b981", emoji: "🇺🇸" },
+                  { key: "SPY",       label: "SPY (S&P 500)",  color: "#f59e0b", emoji: "🏆" },
                 ];
-                const rangeReturns = { "1mo": { SPY: 4.2, QQQ: 5.1, VTI: 3.9 }, "3mo": { SPY: 8.4, QQQ: 10.2, VTI: 7.8 }, "6mo": { SPY: 11.2, QQQ: 14.8, VTI: 10.5 }, "1y": { SPY: 24.6, QQQ: 28.3, VTI: 23.1 } };
+
+                // Build portfolio blended line
+                const tickersWithData = TICKERS.filter(t => sparklineData[t]?.points?.length > 1);
+                const hasPortfolio = tickersWithData.length >= 3;
+                const hasSPY = sparklineData["SPY"]?.points?.length > 1;
+                const hasVTI = sparklineData["VTI"]?.points?.length > 1;
+
+                if (!hasPortfolio && !hasSPY && !hasVTI) {
+                  return <div style={{ textAlign: "center", padding: 20, color: "#ccc", fontSize: 13 }}>Loading chart data...</div>;
+                }
+
+                // Normalize all to % change from open
+                const getPortfolioLine = (len) => {
+                  if (!hasPortfolio) return null;
+                  const maxL = Math.max(...tickersWithData.map(t => sparklineData[t].points.length));
+                  return Array.from({ length: len }, (_, i) =>
+                    tickersWithData.reduce((sum, t) => {
+                      const pts = sparklineData[t].points;
+                      const idx = Math.min(Math.floor(i / len * pts.length), pts.length - 1);
+                      return sum + ((pts[idx] - pts[0]) / pts[0]) * (staticData[t].allocation / 100);
+                    }, 0) * 100
+                  );
+                };
+
+                const getBenchLine = (ticker, len) => {
+                  const pts = sparklineData[ticker]?.points;
+                  if (!pts?.length) return null;
+                  return Array.from({ length: len }, (_, i) => {
+                    const idx = Math.min(Math.floor(i / len * pts.length), pts.length - 1);
+                    return ((pts[idx] - pts[0]) / pts[0]) * 100;
+                  });
+                };
+
+                const LEN = 60;
+                const portLine = getPortfolioLine(LEN);
+                const vtiLine = getBenchLine("VTI", LEN);
+                const spyLine = getBenchLine("SPY", LEN);
+
+                // Find global min/max across all lines for shared Y scale
+                const allVals = [...(portLine||[]), ...(vtiLine||[]), ...(spyLine||[])];
+                const gMin = Math.min(...allVals, 0);
+                const gMax = Math.max(...allVals, 0.01);
+                const range = gMax - gMin || 0.01;
+                const W = 340, H = 110;
+                const toY = v => H - ((v - gMin) / range) * (H - 14) - 7;
+                const makePath = line => line ? "M " + line.map((v, i) => `${(i / (LEN - 1)) * W},${toY(v)}`).join(" L ") : null;
+                const makeArea = (path) => path ? path + ` L ${W},${H} L 0,${H} Z` : null;
+
+                const portPath = makePath(portLine);
+                const vtiPath = makePath(vtiLine);
+                const spyPath = makePath(spyLine);
+                const zeroY = toY(0);
+
+                // Final values
+                const portEnd = portLine ? portLine[portLine.length - 1] : null;
+                const vtiEnd = vtiLine ? vtiLine[vtiLine.length - 1] : null;
+                const spyEnd = spyLine ? spyLine[spyLine.length - 1] : null;
+
                 return (
                   <div>
-                    {benchmarks.map((b, i) => {
-                      const ret = rangeReturns[benchmarkRange]?.[b.ticker];
-                      return (
-                        <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 0", borderBottom: i < benchmarks.length - 1 ? "1px solid #f5f5f5" : "none" }}>
-                          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                            <span>{b.emoji}</span>
-                            <div>
-                              <div style={{ fontWeight: 700, fontSize: 13 }}>{b.label}</div>
-                              <div style={{ fontSize: 11, color: "#888" }}>{b.ticker}</div>
-                            </div>
-                          </div>
-                          <div style={{ textAlign: "right" }}>
-                            <div style={{ fontWeight: 800, fontSize: 14, color: ret >= 0 ? "#10b981" : "#ef4444" }}>+{ret}%</div>
-                            <div style={{ fontSize: 10, color: "#aaa" }}>{benchmarkRange === "1mo" ? "30 days" : benchmarkRange === "3mo" ? "90 days" : benchmarkRange === "6mo" ? "180 days" : "1 year"}</div>
-                          </div>
+                    {/* Legend */}
+                    <div style={{ display: "flex", gap: 16, marginBottom: 12, flexWrap: "wrap" }}>
+                      {[
+                        { label: "Your Portfolio", val: portEnd, color: "#667eea", emoji: "💼" },
+                        { label: "VTI", val: vtiEnd, color: "#10b981", emoji: "🇺🇸" },
+                        { label: "SPY", val: spyEnd, color: "#f59e0b", emoji: "🏆" },
+                      ].map((l, i) => (
+                        <div key={i} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                          <div style={{ width: 20, height: 3, background: l.color, borderRadius: 2 }} />
+                          <span style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>{l.emoji} {l.label}</span>
+                          {l.val !== null && <span style={{ fontSize: 12, fontWeight: 900, color: l.val >= 0 ? "#10b981" : "#ef4444" }}>{l.val >= 0 ? "+" : ""}{l.val.toFixed(2)}%</span>}
                         </div>
-                      );
-                    })}
-                    <div style={{ marginTop: 14, padding: 12, background: "#f8f9ff", borderRadius: 12, fontSize: 11, color: "#667eea", textAlign: "center", fontWeight: 600 }}>
-                      💡 Enter your positions + avg cost in P&L tab to see YOUR actual returns vs these benchmarks
+                      ))}
                     </div>
+
+                    {/* Chart */}
+                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", height: 110 }}>
+                      <defs>
+                        <linearGradient id="portAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#667eea" stopOpacity="0.15" />
+                          <stop offset="100%" stopColor="#667eea" stopOpacity="0.01" />
+                        </linearGradient>
+                      </defs>
+                      {/* Zero line */}
+                      <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="#e5e7eb" strokeWidth="1" strokeDasharray="4,3" />
+                      {/* Portfolio area fill */}
+                      {portPath && <path d={makeArea(portPath)} fill="url(#portAreaGrad)" />}
+                      {/* Benchmark lines */}
+                      {spyPath && <path d={spyPath} fill="none" stroke="#f59e0b" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5,3" opacity="0.8" />}
+                      {vtiPath && <path d={vtiPath} fill="none" stroke="#10b981" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="5,3" opacity="0.8" />}
+                      {/* Portfolio line on top */}
+                      {portPath && <path d={portPath} fill="none" stroke="#667eea" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+                      {/* End dots */}
+                      {portEnd !== null && <circle cx={W} cy={toY(portEnd)} r="4" fill="#667eea" />}
+                      {vtiEnd !== null && <circle cx={W} cy={toY(vtiEnd)} r="3" fill="#10b981" />}
+                      {spyEnd !== null && <circle cx={W} cy={toY(spyEnd)} r="3" fill="#f59e0b" />}
+                    </svg>
+
+                    {/* Time labels */}
+                    <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+                      <span style={{ fontSize: 9, color: "#ccc", fontWeight: 700 }}>9:30 AM Open</span>
+                      <span style={{ fontSize: 9, color: "#ccc", fontWeight: 700 }}>{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} Now</span>
+                    </div>
+
+                    {/* Winner banner */}
+                    {portEnd !== null && spyEnd !== null && (
+                      <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 12, background: portEnd > spyEnd ? "linear-gradient(135deg, #f0fdf4, #dcfce7)" : "linear-gradient(135deg, #fff7ed, #fef3c7)", border: `1.5px solid ${portEnd > spyEnd ? "#86efac" : "#fcd34d"}` }}>
+                        <span style={{ fontSize: 12, fontWeight: 800, color: portEnd > spyEnd ? "#065f46" : "#92400e" }}>
+                          {portEnd > spyEnd
+                            ? `✅ Beating S&P 500 by +${(portEnd - spyEnd).toFixed(2)}% today`
+                            : `📉 Trailing S&P 500 by ${(portEnd - spyEnd).toFixed(2)}% today`}
+                        </span>
+                        {portEnd !== null && vtiEnd !== null && (
+                          <div style={{ fontSize: 11, marginTop: 4, color: "#888" }}>
+                            {portEnd > vtiEnd ? `✅ Also beating VTI by +${(portEnd - vtiEnd).toFixed(2)}%` : `📉 Trailing VTI by ${(portEnd - vtiEnd).toFixed(2)}%`}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })()}
