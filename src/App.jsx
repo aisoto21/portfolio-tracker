@@ -885,11 +885,11 @@ export default function App() {
                   {totalAccount > 0 && (
                     <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
                       {portfolioValue > 0 && <span style={{ fontSize: 11, opacity: 0.45, fontWeight: 600 }}>
-                        📈 Invested ${portfolioValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                        📈 Invested ${portfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       </span>}
                       {cash > 0 && <>
                         <span style={{ width: 1, height: 10, background: "rgba(255,255,255,0.15)", display: "inline-block" }} />
-                        <span style={{ fontSize: 11, opacity: 0.45, fontWeight: 600 }}>💵 Cash ${cash.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                        <span style={{ fontSize: 11, opacity: 0.45, fontWeight: 600 }}>💵 Cash ${cash.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                       </>}
                     </div>
                   )}
