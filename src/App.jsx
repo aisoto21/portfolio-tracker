@@ -803,128 +803,128 @@ export default function App() {
       )}
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #0f0c29 0%, #302b63 40%, #24243e 100%)", padding: "0", textAlign: "center", color: "white", position: "relative", overflow: "hidden" }}>
-        {/* Animated particle background */}
-        <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
-          {[...Array(18)].map((_, i) => (
-            <div key={i} style={{
-              position: "absolute",
-              width: i % 3 === 0 ? 3 : i % 3 === 1 ? 2 : 1.5,
-              height: i % 3 === 0 ? 3 : i % 3 === 1 ? 2 : 1.5,
-              borderRadius: "50%",
-              background: ["#667eea","#f093fb","#4ade80","#fbbf24","#a78bfa","#34d399"][i % 6],
-              left: `${(i * 17 + 5) % 100}%`,
-              top: `${(i * 23 + 10) % 100}%`,
-              opacity: 0.4 + (i % 3) * 0.15,
-              animation: `float ${3 + (i % 4)}s ease-in-out ${i * 0.3}s infinite alternate`,
-              boxShadow: `0 0 6px ${["#667eea","#f093fb","#4ade80","#fbbf24","#a78bfa","#34d399"][i % 6]}`,
-            }} />
+      <div style={{ background: "linear-gradient(160deg, #0a0a1a 0%, #0f0c29 35%, #1a1035 65%, #0d0d1f 100%)", color: "white", position: "relative", overflow: "hidden", fontFamily: "'Plus Jakarta Sans', 'SF Pro Display', system-ui" }}>
+
+        {/* Ambient glow blobs */}
+        <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+          <div style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", background: "radial-gradient(circle, rgba(102,126,234,0.12) 0%, transparent 70%)", top: -100, left: "20%", transform: "translateX(-50%)" }} />
+          <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "radial-gradient(circle, rgba(240,147,251,0.08) 0%, transparent 70%)", top: -50, right: "15%" }} />
+          <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(74,222,128,0.06) 0%, transparent 70%)", bottom: 20, left: "40%" }} />
+          {[...Array(12)].map((_, i) => (
+            <div key={i} style={{ position: "absolute", width: i % 2 === 0 ? 2 : 1.5, height: i % 2 === 0 ? 2 : 1.5, borderRadius: "50%", background: ["#667eea","#f093fb","#4ade80","#fbbf24","#a78bfa"][i % 5], left: `${(i * 19 + 7) % 95}%`, top: `${(i * 31 + 5) % 85}%`, opacity: 0.25 + (i % 3) * 0.1, animation: `float ${3 + (i % 3)}s ease-in-out ${i * 0.4}s infinite alternate` }} />
           ))}
         </div>
 
-        {/* Top bar */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px 0", position: "relative", zIndex: 2 }}>
-          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 4, opacity: 0.6, textTransform: "uppercase", fontFamily: "'SF Pro Display', system-ui" }}>Joint Brokerage</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            {loading
-              ? <div style={{ width: 7, height: 7, border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid white", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
-              : <div style={{ width: 7, height: 7, borderRadius: "50%", background: apiError ? "#fbbf24" : "#4ade80", boxShadow: apiError ? "0 0 8px #fbbf24" : "0 0 8px #4ade80", animation: "pulse 2s ease-in-out infinite" }} />}
-            <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 600 }}>{loading ? "Fetching..." : apiError ? "Reference data" : `Live · ${lastUpdated} · ↻${countdown}s`}</span>
-            <button onClick={fetchLiveData} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "white", borderRadius: 100, padding: "3px 10px", fontSize: 10, cursor: "pointer", fontWeight: 700, backdropFilter: "blur(10px)" }}>↻</button>
-            <button onClick={() => setShowNicknameModal(true)} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", color: "white", borderRadius: 100, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+        {/* Top bar — slim */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 20px", position: "relative", zIndex: 2, borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 5, opacity: 0.4, textTransform: "uppercase" }}>Joint Brokerage</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+              {loading
+                ? <div style={{ width: 6, height: 6, border: "1.5px solid rgba(255,255,255,0.3)", borderTop: "1.5px solid white", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+                : <div style={{ width: 6, height: 6, borderRadius: "50%", background: apiError ? "#fbbf24" : "#4ade80", boxShadow: apiError ? "0 0 6px #fbbf24" : "0 0 10px #4ade80", animation: "pulse 2s ease-in-out infinite" }} />}
+              <span style={{ fontSize: 10, opacity: 0.5, fontWeight: 600, letterSpacing: 0.3 }}>{loading ? "Fetching..." : `Live · ${lastUpdated} · ↻${countdown}s`}</span>
+            </div>
+            <button onClick={fetchLiveData} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "white", borderRadius: 100, padding: "3px 10px", fontSize: 10, cursor: "pointer", fontWeight: 700 }}>↻</button>
+            <button onClick={() => setShowNicknameModal(true)} style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.12)", color: "white", borderRadius: 100, padding: "3px 9px", fontSize: 11, cursor: "pointer" }}>✏️</button>
           </div>
         </div>
 
-        {/* Title */}
-        <div style={{ padding: "12px 20px 0", position: "relative", zIndex: 2 }}>
-          <h1 style={{ fontSize: "clamp(22px,5.5vw,38px)", fontWeight: 900, margin: "0 0 4px", letterSpacing: -1, fontFamily: "'SF Pro Display', 'Helvetica Neue', system-ui", background: "linear-gradient(135deg, #ffffff 0%, #e0d7ff 50%, #f093fb 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-            {nickname || "Our Investment Hub"} 💰
-          </h1>
-        </div>
+        {/* Main hero — two column layout */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "20px 28px 16px", position: "relative", zIndex: 2, gap: 20, flexWrap: "wrap" }}>
 
-        {/* Hero portfolio value */}
-        <div style={{ padding: "8px 20px 0", position: "relative", zIndex: 2 }}>
-          {portfolioValue ? (
-            <div style={{ marginBottom: 6 }}>
-              <div style={{ fontSize: "clamp(32px,8vw,52px)", fontWeight: 900, letterSpacing: -2, fontFamily: "'SF Pro Display', system-ui", lineHeight: 1 }}>
-                ${portfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-              </div>
-              {totals.tc > 0 && (
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
-                  <span style={{ fontSize: 12, opacity: 0.55 }}>Cost basis ${totals.tc.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: totals.pnl >= 0 ? "#4ade80" : "#f87171", background: totals.pnl >= 0 ? "rgba(74,222,128,0.15)" : "rgba(248,113,113,0.15)", borderRadius: 100, padding: "2px 10px" }}>
-                    {totals.pnl >= 0 ? "+" : ""}${totals.pnl.toFixed(0)} · {totals.pnl >= 0 ? "▲" : "▼"}{Math.abs(totals.pct).toFixed(2)}% all time
+          {/* LEFT — value + name */}
+          <div style={{ flex: "1 1 280px" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, opacity: 0.45, textTransform: "uppercase", marginBottom: 6 }}>{nickname || "Our Investment Hub"}</div>
+            <div style={{ fontSize: "clamp(36px, 7vw, 58px)", fontWeight: 900, letterSpacing: -2, lineHeight: 1, marginBottom: 8, fontVariantNumeric: "tabular-nums" }}>
+              {portfolioValue
+                ? <span style={{ background: "linear-gradient(135deg, #ffffff 30%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                    ${portfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                   </span>
-                </div>
-              )}
+                : <span style={{ fontSize: 16, opacity: 0.4, fontWeight: 600, letterSpacing: 0 }}>Enter positions to see live value</span>
+              }
             </div>
-          ) : (
-            <div style={{ fontSize: 14, opacity: 0.5, marginBottom: 6 }}>Add positions to see live value</div>
-          )}
-
-          {/* Today's move badge */}
-          {todayPct !== null && (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: todayPct >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)", border: `1px solid ${todayPct >= 0 ? "rgba(74,222,128,0.4)" : "rgba(248,113,113,0.4)"}`, borderRadius: 100, padding: "5px 14px", marginBottom: 14, backdropFilter: "blur(10px)" }}>
-              <span>{todayPct >= 0 ? "📈" : "📉"}</span>
-              <span style={{ fontSize: 12, fontWeight: 800 }}>Portfolio {todayPct >= 0 ? "+" : ""}{todayPct.toFixed(2)}% today</span>
-              {portfolioValue && todayPct !== null && (
-                <span style={{ fontSize: 11, opacity: 0.8 }}>· {todayPct >= 0 ? "+" : ""}${Math.abs(portfolioValue * todayPct / 100).toFixed(2)} today</span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Glass morphism stats row */}
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, padding: "0 16px 14px", position: "relative", zIndex: 2 }}>
-          {(() => {
-            const bestTicker = TICKERS.reduce((best, t) => {
-              const pct = liveData[t] ? parseFloat(liveData[t].changePct) : -999;
-              return pct > (liveData[best] ? parseFloat(liveData[best].changePct) : -999) ? t : best;
-            }, TICKERS[0]);
-            const bestPct = liveData[bestTicker] ? parseFloat(liveData[bestTicker].changePct) : null;
-            const todayDollar = portfolioValue && todayPct !== null ? portfolioValue * todayPct / 100 : null;
-            const stats = [
-              { label: "Today P&L", value: todayDollar != null ? `${todayDollar >= 0 ? "+" : ""}$${Math.abs(todayDollar).toFixed(2)}` : "—", color: todayDollar != null ? (todayDollar >= 0 ? "#4ade80" : "#f87171") : "white" },
-              { label: "Best Today", value: bestPct != null ? `${staticData[bestTicker].emoji} ${bestTicker} +${bestPct.toFixed(2)}%` : "—", color: "#4ade80" },
-              { label: `VIX ${vix ? vix.toFixed(1) : "—"}`, value: fgLabel, color: fgColor, glow: fgColor },
-              { label: "Positions", value: `${TICKERS.length} holdings`, color: "white" },
-            ];
-            return stats.map((s, i) => (
-              <div key={i} style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "8px 16px", minWidth: 100, boxShadow: s.glow ? `0 0 20px ${s.glow}30` : "0 4px 20px rgba(0,0,0,0.2)" }}>
-                <div style={{ fontSize: 10, opacity: 0.55, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>{s.label}</div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: s.color }}>{s.value}</div>
-              </div>
-            ));
-          })()}
-        </div>
-
-        {/* Scrolling ticker tape */}
-        <div style={{ overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.2)", padding: "7px 0", position: "relative", zIndex: 2 }}>
-          <div style={{ display: "flex", gap: 32, animation: "tickerScroll 20s linear infinite", whiteSpace: "nowrap", width: "max-content" }}>
-            {[...TICKERS, ...TICKERS].map((ticker, i) => {
-              const ld = liveData[ticker];
-              const pct = ld ? parseFloat(ld.changePct) : null;
-              const isUp = pct != null ? pct >= 0 : true;
-              return (
-                <span key={i} onClick={() => { setSelected(ticker); setActiveSection(0); setActiveTab(0); }} style={{ fontSize: 11, fontWeight: 700, cursor: "pointer", color: pct != null ? (isUp ? "#4ade80" : "#f87171") : "rgba(255,255,255,0.4)" }}>
-                  {staticData[ticker].emoji} {ticker} {ld ? `$${parseFloat(ld.price).toFixed(2)}` : "—"} {pct != null ? `${isUp ? "▲" : "▼"}${Math.abs(pct).toFixed(2)}%` : ""}
+            {totals.tc > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 11, opacity: 0.4, fontWeight: 600 }}>Cost ${totals.tc.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                <span style={{ width: 1, height: 12, background: "rgba(255,255,255,0.15)", display: "inline-block" }} />
+                <span style={{ fontSize: 12, fontWeight: 800, color: totals.pnl >= 0 ? "#4ade80" : "#f87171", background: totals.pnl >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)", border: `1px solid ${totals.pnl >= 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`, borderRadius: 100, padding: "2px 10px" }}>
+                  {totals.pnl >= 0 ? "+" : ""}${totals.pnl.toFixed(2)} · {totals.pnl >= 0 ? "▲" : "▼"}{Math.abs(totals.pct).toFixed(2)}%
                 </span>
-              );
-            })}
+                <span style={{ fontSize: 10, opacity: 0.35, fontWeight: 600 }}>all time</span>
+              </div>
+            )}
+          </div>
+
+          {/* Vertical divider */}
+          <div style={{ width: 1, height: 80, background: "linear-gradient(to bottom, transparent, rgba(255,255,255,0.12), transparent)", flexShrink: 0, display: "none" }} />
+
+          {/* RIGHT — today's stats grid */}
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, flex: "0 0 auto" }}>
+            {(() => {
+              const bestTicker = TICKERS.reduce((best, t) => {
+                const pct = liveData[t] ? parseFloat(liveData[t].changePct) : -999;
+                return pct > (liveData[best] ? parseFloat(liveData[best].changePct) : -999) ? t : best;
+              }, TICKERS[0]);
+              const worstTicker = TICKERS.reduce((worst, t) => {
+                const pct = liveData[t] ? parseFloat(liveData[t].changePct) : 999;
+                return pct < (liveData[worst] ? parseFloat(liveData[worst].changePct) : 999) ? t : worst;
+              }, TICKERS[0]);
+              const bestPct = liveData[bestTicker] ? parseFloat(liveData[bestTicker].changePct) : null;
+              const worstPct = liveData[worstTicker] ? parseFloat(liveData[worstTicker].changePct) : null;
+              const todayDollar = portfolioValue && todayPct !== null ? portfolioValue * todayPct / 100 : null;
+              const cards = [
+                { label: "Today", value: todayPct !== null ? `${todayPct >= 0 ? "+" : ""}${todayPct.toFixed(2)}%` : "—", sub: todayDollar != null ? `${todayDollar >= 0 ? "+" : ""}$${Math.abs(todayDollar).toFixed(2)}` : null, color: todayPct !== null ? (todayPct >= 0 ? "#4ade80" : "#f87171") : "white" },
+                { label: "Best", value: bestPct != null ? `${staticData[bestTicker].emoji} ${bestTicker}` : "—", sub: bestPct != null ? `+${bestPct.toFixed(2)}%` : null, color: "#4ade80" },
+                { label: "Lagging", value: worstPct != null ? `${staticData[worstTicker].emoji} ${worstTicker}` : "—", sub: worstPct != null ? `${worstPct.toFixed(2)}%` : null, color: worstPct != null && worstPct < 0 ? "#f87171" : "#fbbf24" },
+                { label: `VIX ${vix ? vix.toFixed(1) : "—"}`, value: fgLabel, sub: "Fear & Greed", color: fgColor, glow: fgColor },
+              ];
+              return cards.map((c, i) => (
+                <div key={i} style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "10px 14px", minWidth: 110, boxShadow: c.glow ? `0 0 20px ${c.glow}20, inset 0 1px 0 rgba(255,255,255,0.08)` : "inset 0 1px 0 rgba(255,255,255,0.06)" }}>
+                  <div style={{ fontSize: 9, opacity: 0.45, fontWeight: 800, textTransform: "uppercase", letterSpacing: 1, marginBottom: 4 }}>{c.label}</div>
+                  <div style={{ fontSize: 15, fontWeight: 900, color: c.color, letterSpacing: -0.3 }}>{c.value}</div>
+                  {c.sub && <div style={{ fontSize: 10, opacity: 0.55, marginTop: 2, fontWeight: 600 }}>{c.sub}</div>}
+                </div>
+              ));
+            })()}
           </div>
         </div>
 
-        {/* Rainbow allocation bar */}
-        <div style={{ maxWidth: 500, margin: "12px auto 14px", padding: "0 20px", position: "relative", zIndex: 2 }}>
-          <div style={{ display: "flex", borderRadius: 100, overflow: "hidden", height: 6, gap: 2 }}>
+        {/* Ticker tape with edge fades */}
+        <div style={{ position: "relative", zIndex: 2, borderTop: "1px solid rgba(255,255,255,0.06)", background: "rgba(0,0,0,0.25)" }}>
+          <div style={{ position: "absolute", left: 0, top: 0, bottom: 0, width: 60, background: "linear-gradient(to right, #0a0a1a, transparent)", zIndex: 3, pointerEvents: "none" }} />
+          <div style={{ position: "absolute", right: 0, top: 0, bottom: 0, width: 60, background: "linear-gradient(to left, #0a0a1a, transparent)", zIndex: 3, pointerEvents: "none" }} />
+          <div style={{ overflow: "hidden", padding: "7px 0" }}>
+            <div style={{ display: "flex", gap: 36, animation: "tickerScroll 25s linear infinite", whiteSpace: "nowrap", width: "max-content" }}>
+              {[...TICKERS, ...TICKERS, ...TICKERS].map((ticker, i) => {
+                const ld = liveData[ticker];
+                const pct = ld ? parseFloat(ld.changePct) : null;
+                const isUp = pct != null ? pct >= 0 : true;
+                return (
+                  <span key={i} onClick={() => { setSelected(ticker); setActiveSection(0); setActiveTab(0); }} style={{ fontSize: 11, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.85)" }}>
+                    <span style={{ opacity: 0.5 }}>{staticData[ticker].emoji}</span>
+                    <span style={{ fontWeight: 800 }}>{ticker}</span>
+                    {ld && <span>${parseFloat(ld.price).toFixed(2)}</span>}
+                    {pct != null && <span style={{ color: isUp ? "#4ade80" : "#f87171", fontWeight: 800 }}>{isUp ? "▲" : "▼"}{Math.abs(pct).toFixed(2)}%</span>}
+                    <span style={{ opacity: 0.15, marginLeft: 4 }}>|</span>
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* Allocation bar — slim at bottom */}
+        <div style={{ padding: "10px 24px 12px", position: "relative", zIndex: 2 }}>
+          <div style={{ display: "flex", borderRadius: 100, overflow: "hidden", height: 4, gap: 1.5, marginBottom: 6 }}>
             {Object.entries(staticData).map(([ticker, d]) => (
               <div key={ticker} onClick={() => { setSelected(ticker); setActiveTab(0); }} title={`${ticker}: ${d.allocation}%`}
-                style={{ flex: d.allocation, background: d.gradient, cursor: "pointer", opacity: selected === ticker ? 1 : 0.5, transition: "all 0.3s ease", boxShadow: selected === ticker ? `0 0 8px ${d.accent}` : "none" }} />
+                style={{ flex: d.allocation, background: d.gradient, cursor: "pointer", opacity: selected === ticker ? 1 : 0.45, transition: "all 0.3s ease", boxShadow: selected === ticker ? `0 0 8px ${d.accent}` : "none" }} />
             ))}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
-            {Object.entries(staticData).map(([ticker]) => (
-              <div key={ticker} onClick={() => { setSelected(ticker); setActiveTab(0); }} style={{ fontSize: 9, fontWeight: 800, opacity: selected === ticker ? 1 : 0.4, cursor: "pointer", transition: "opacity 0.2s" }}>{ticker}</div>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            {Object.entries(staticData).map(([ticker, d]) => (
+              <div key={ticker} onClick={() => { setSelected(ticker); setActiveTab(0); }} style={{ fontSize: 8.5, fontWeight: 800, opacity: selected === ticker ? 1 : 0.35, cursor: "pointer", transition: "opacity 0.2s", color: selected === ticker ? d.accent : "white" }}>{ticker}</div>
             ))}
           </div>
         </div>
