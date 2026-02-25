@@ -1,10 +1,10 @@
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchSparkline(ticker, retries = 3) {
-  // Fetch 5-day 30-minute interval data for real sparklines
+  // Fetch intraday 5-minute data for today's sparkline
   const urls = [
-    `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=30m&range=5d`,
-    `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=30m&range=5d`,
+    `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}?interval=5m&range=1d`,
+    `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=5m&range=1d`,
   ];
   for (let attempt = 0; attempt < retries; attempt++) {
     try {
