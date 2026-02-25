@@ -1039,7 +1039,8 @@ export default function App() {
                     </span>
                   </div>
                   <div style={{ position: "relative" }}>
-                    <svg width="100%" viewBox={`0 0 ${W} ${H + LABEL_H}`} preserveAspectRatio="none" style={{ display: "block", height: H + LABEL_H, filter: `drop-shadow(0 0 10px ${glowColor})` }}>
+                    {/* Chart SVG — stretches horizontally, no text */}
+                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", height: H, filter: `drop-shadow(0 0 10px ${glowColor})` }}>
                       <defs>
                         <linearGradient id="blendGrad" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor={c} stopOpacity="0.3" />
@@ -1050,24 +1051,22 @@ export default function App() {
                           <stop offset="100%" stopColor={c} stopOpacity="1" />
                         </linearGradient>
                       </defs>
-                      {/* Zero baseline */}
                       <line x1="0" y1={zeroY} x2={W} y2={zeroY} stroke="rgba(255,255,255,0.08)" strokeWidth="1" strokeDasharray="4,3" />
-                      {/* Hourly tick lines */}
                       {hourTicks.map((t, i) => (
-                        <g key={i}>
-                          <line x1={t.x} y1={0} x2={t.x} y2={H} stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="2,4" />
-                          <line x1={t.x} y1={H} x2={t.x} y2={H + 5} stroke="rgba(255,255,255,0.2)" strokeWidth="1" />
-                          <text x={t.x} y={H + 13} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.3)" fontWeight="600">{t.label}</text>
-                        </g>
+                        <line key={i} x1={t.x} y1={0} x2={t.x} y2={H} stroke="rgba(255,255,255,0.07)" strokeWidth="1" strokeDasharray="2,4" />
                       ))}
-                      {/* Open label — hide if 10AM tick is too close */}
-                      {!firstTickTooClose && <text x={4} y={H + 13} textAnchor="start" fontSize="7" fill="rgba(255,255,255,0.2)" fontWeight="600">9:30</text>}
-                      {/* Chart area and line */}
                       <path d={areaD} fill="url(#blendGrad)" />
                       <path d={pathD} fill="none" stroke="url(#blendLine)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                       <circle cx={lastX} cy={lastY} r="7" fill={c} opacity="0.2" />
                       <circle cx={lastX} cy={lastY} r="4" fill={c} />
                     </svg>
+                    {/* Labels rendered as HTML so they never get squished */}
+                    <div style={{ position: "relative", height: 16, marginTop: 3 }}>
+                      {!firstTickTooClose && <span style={{ position: "absolute", left: 0, fontSize: 9, color: "rgba(255,255,255,0.25)", fontWeight: 700 }}>9:30</span>}
+                      {hourTicks.map((t, i) => (
+                        <span key={i} style={{ position: "absolute", left: `${(t.x / W) * 100}%`, transform: "translateX(-50%)", fontSize: 9, color: "rgba(255,255,255,0.35)", fontWeight: 700, whiteSpace: "nowrap" }}>{t.label}</span>
+                      ))}
+                    </div>
                   </div>
                 </div>
               );
