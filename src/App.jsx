@@ -303,7 +303,6 @@ export default function App() {
             dayHigh: q.dayHigh != null ? Number(q.dayHigh).toFixed(2) : null,
             dayLow: q.dayLow != null ? Number(q.dayLow).toFixed(2) : null,
             marketCap: q.marketCap, volume: q.volume,
-            // Live calculated technicals
             rsi: q.rsi,
             ma50: q.ma50,
             ma200: q.ma200,
@@ -311,6 +310,11 @@ export default function App() {
             aboveMa200: q.aboveMa200,
             week52High: q.week52High,
             week52Low: q.week52Low,
+            marketState: q.marketState || "REGULAR",
+            postMarketPrice: q.postMarketPrice || null,
+            postMarketChangePct: q.postMarketChangePct || null,
+            preMarketPrice: q.preMarketPrice || null,
+            preMarketChangePct: q.preMarketChangePct || null,
           };
         });
         if (vixVal) setVix(vixVal);
