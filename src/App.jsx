@@ -221,6 +221,10 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [apiError, setApiError] = useState(false);
+  const [cashReserves, setCashReserves] = useState(() => {
+    try { return localStorage.getItem("cashReserves") || ""; } catch { return ""; }
+  });
+  const [showRebalanceAlert, setShowRebalanceAlert] = useState(false);
   const [positions, setPositions] = useState(() => {
     try {
       const saved = localStorage.getItem("portfolioPositions");
@@ -505,6 +509,10 @@ export default function App() {
   useEffect(() => {
     try { localStorage.setItem("portfolioNickname", nickname); } catch {}
   }, [nickname]);
+
+  useEffect(() => {
+    try { localStorage.setItem("cashReserves", cashReserves); } catch {}
+  }, [cashReserves]);
 
   useEffect(() => {
     try { localStorage.setItem("priceAlerts", JSON.stringify(priceAlerts)); } catch {}
@@ -861,24 +869,43 @@ export default function App() {
           {/* LEFT — value + name */}
           <div style={{ flex: "1 1 220px", minWidth: 0 }}>
             <div style={{ fontSize: "clamp(18px, 3vw, 26px)", fontWeight: 900, letterSpacing: -0.5, opacity: 0.9, marginBottom: 4, background: "linear-gradient(135deg, #ffffff 40%, #a78bfa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{nickname || "Our Investment Hub"}</div>
-            <div style={{ fontSize: "clamp(32px, 6vw, 54px)", fontWeight: 900, letterSpacing: -2, lineHeight: 1, marginBottom: 8, fontVariantNumeric: "tabular-nums" }}>
-              {portfolioValue
-                ? <span style={{ background: "linear-gradient(135deg, #ffffff 30%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                    ${portfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                  </span>
-                : <span style={{ fontSize: 13, opacity: 0.35, fontWeight: 600, letterSpacing: 0 }}>Add positions via ⚙️ to see live value</span>
-              }
-            </div>
-            {totals.tc > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 11, opacity: 0.4, fontWeight: 600 }}>Cost ${totals.tc.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
-                <span style={{ width: 1, height: 12, background: "rgba(255,255,255,0.15)", display: "inline-block" }} />
-                <span style={{ fontSize: 12, fontWeight: 800, color: totals.pnl >= 0 ? "#4ade80" : "#f87171", background: totals.pnl >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)", border: `1px solid ${totals.pnl >= 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`, borderRadius: 100, padding: "2px 10px" }}>
-                  {totals.pnl >= 0 ? "+" : ""}${totals.pnl.toFixed(2)} · {totals.pnl >= 0 ? "▲" : "▼"}{Math.abs(totals.pct).toFixed(2)}%
-                </span>
-                <span style={{ fontSize: 10, opacity: 0.35, fontWeight: 600 }}>all time</span>
-              </div>
-            )}
+            {(() => {
+              const cash = parseFloat(cashReserves) || 0;
+              const totalAccount = (portfolioValue || 0) + cash;
+              return (
+                <div>
+                  <div style={{ fontSize: "clamp(32px, 6vw, 54px)", fontWeight: 900, letterSpacing: -2, lineHeight: 1, marginBottom: 6, fontVariantNumeric: "tabular-nums" }}>
+                    {totalAccount > 0
+                      ? <span style={{ background: "linear-gradient(135deg, #ffffff 30%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                          ${totalAccount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </span>
+                      : <span style={{ fontSize: 13, opacity: 0.35, fontWeight: 600, letterSpacing: 0 }}>Add positions via ⚙️ to see live value</span>
+                    }
+                  </div>
+                  {totalAccount > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+                      {portfolioValue > 0 && <span style={{ fontSize: 11, opacity: 0.45, fontWeight: 600 }}>
+                        📈 Invested ${portfolioValue.toLocaleString("en-US", { maximumFractionDigits: 0 })}
+                      </span>}
+                      {cash > 0 && <>
+                        <span style={{ width: 1, height: 10, background: "rgba(255,255,255,0.15)", display: "inline-block" }} />
+                        <span style={{ fontSize: 11, opacity: 0.45, fontWeight: 600 }}>💵 Cash ${cash.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                      </>}
+                    </div>
+                  )}
+                  {totals.tc > 0 && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 11, opacity: 0.4, fontWeight: 600 }}>Cost ${totals.tc.toLocaleString("en-US", { maximumFractionDigits: 0 })}</span>
+                      <span style={{ width: 1, height: 12, background: "rgba(255,255,255,0.15)", display: "inline-block" }} />
+                      <span style={{ fontSize: 12, fontWeight: 800, color: totals.pnl >= 0 ? "#4ade80" : "#f87171", background: totals.pnl >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)", border: `1px solid ${totals.pnl >= 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`, borderRadius: 100, padding: "2px 10px" }}>
+                        {totals.pnl >= 0 ? "+" : ""}${totals.pnl.toFixed(2)} · {totals.pnl >= 0 ? "▲" : "▼"}{Math.abs(totals.pct).toFixed(2)}%
+                      </span>
+                      <span style={{ fontSize: 10, opacity: 0.35, fontWeight: 600 }}>all time</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
             {todayPct !== null && (
               <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, background: todayPct >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)", border: `1px solid ${todayPct >= 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)"}`, borderRadius: 100, padding: "4px 12px" }}>
                 <span style={{ fontSize: 13 }}>{todayPct >= 0 ? "📈" : "📉"}</span>
@@ -1099,12 +1126,15 @@ export default function App() {
               }).filter(Boolean);
               if (alerts.length === 0) return null;
               return (
-                <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 4px 20px rgba(102,126,234,0.1)", border: "1.5px solid #e0e7ff" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <div style={{ background: "white", borderRadius: 20, marginBottom: 16, boxShadow: "0 4px 20px rgba(102,126,234,0.1)", border: "1.5px solid #e0e7ff", overflow: "hidden" }}>
+                  <button onClick={() => setShowRebalanceAlert(p => !p)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "16px 20px", background: "none", border: "none", cursor: "pointer", textAlign: "left" }}>
                     <span style={{ fontSize: 18 }}>⚖️</span>
-                    <span style={{ fontWeight: 800, fontSize: 15, color: "#333" }}>Rebalancing Alerts</span>
+                    <span style={{ fontWeight: 800, fontSize: 15, color: "#333", flex: 1 }}>Rebalancing Alerts</span>
                     <span style={{ background: "#ef4444", color: "white", borderRadius: 100, padding: "1px 8px", fontSize: 10, fontWeight: 800 }}>{alerts.length}</span>
-                  </div>
+                    <span style={{ fontSize: 12, color: "#aaa", transform: showRebalanceAlert ? "rotate(180deg)" : "none", transition: "transform 0.2s" }}>▼</span>
+                  </button>
+                  {showRebalanceAlert && (
+                  <div style={{ padding: "0 20px 16px" }}>
                   <div style={{ fontSize: 12, color: "#888", marginBottom: 14 }}>Your positions have drifted from their target allocations</div>
                   {alerts.map((a, i) => {
                     const over = a.drift > 0;
@@ -1134,6 +1164,8 @@ export default function App() {
                     );
                   })}
                   <div style={{ fontSize: 11, color: "#aaa", textAlign: "center", marginTop: 8 }}>⚠️ Rule: If any position exceeds 30–35%, consider trimming. Both must agree before acting.</div>
+                  </div>
+                  )}
                 </div>
               );
             })()}
@@ -1460,7 +1492,22 @@ export default function App() {
                 <div style={{ fontWeight: 800, fontSize: 15, color: "#333" }}>📝 Your Positions</div>
                 <button onClick={() => setEditingPositions(!editingPositions)} style={{ background: "linear-gradient(135deg, #667eea, #764ba2)", color: "white", border: "none", borderRadius: 100, padding: "6px 16px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>{editingPositions ? "✅ Done" : "✏️ Edit"}</button>
               </div>
-              {editingPositions && <div style={{ background: "#f0f4ff", borderRadius: 12, padding: "12px 14px", marginBottom: 14, fontSize: 12, color: "#4338ca", lineHeight: 1.6 }}>💡 Enter your average cost per share and shares owned. Live prices calculate your real P&L automatically.</div>}
+              {editingPositions && (
+                <>
+                  <div style={{ background: "#f0f4ff", borderRadius: 12, padding: "12px 14px", marginBottom: 14, fontSize: 12, color: "#4338ca", lineHeight: 1.6 }}>💡 Enter your average cost per share and shares owned. Live prices calculate your real P&L automatically.</div>
+                  <div style={{ background: "#f0fdf4", border: "1.5px solid #86efac", borderRadius: 14, padding: "14px 16px", marginBottom: 14 }}>
+                    <label style={{ fontSize: 11, fontWeight: 800, color: "#166534", letterSpacing: 1, textTransform: "uppercase", display: "block", marginBottom: 6 }}>💵 Cash Reserves (uninvested)</label>
+                    <input
+                      type="number"
+                      placeholder="e.g. 45.00"
+                      value={cashReserves}
+                      onChange={e => setCashReserves(e.target.value)}
+                      style={{ width: "100%", padding: "10px 12px", borderRadius: 10, border: "1.5px solid #86efac", fontSize: 14, fontWeight: 700, outline: "none", boxSizing: "border-box", color: "#166534" }}
+                    />
+                    <div style={{ fontSize: 11, color: "#888", marginTop: 6 }}>This gets added to your invested value to show total account balance in the header</div>
+                  </div>
+                </>
+              )}
               <div style={{ display: "grid", gap: 10 }}>
                 {TICKERS.map(ticker => {
                   const d = staticData[ticker], ld = liveData[ticker], pnl = calcPnL(ticker), pos = positions[ticker];
