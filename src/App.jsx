@@ -628,25 +628,92 @@ export default function App() {
     return <svg width="50" height="18"><line x1="0" y1="9" x2="50" y2="9" stroke={c} strokeWidth="1" strokeDasharray="3,2" opacity="0.4" /></svg>;
   };
 
-  // Donut
+  // Donut charts
   const DonutChart = () => {
-    const cx = 80, cy = 80, r = 58, sw = 24, circ = 2 * Math.PI * r;
-    let offset = 0;
+    const cx = 80, cy = 80, r = 54, sw = 22, circ = 2 * Math.PI * r;
+
+    // Chart 1 — individual holdings
+    let offset1 = 0;
     const slices = Object.entries(staticData).map(([ticker, d]) => {
       const dash = (d.allocation / 100) * circ;
-      const s = { ticker, dash, gap: circ - dash, offset, accent: d.accent };
-      offset += dash; return s;
+      const s = { ticker, dash, gap: circ - dash, offset: offset1, accent: d.accent };
+      offset1 += dash; return s;
     });
+
+    // Chart 2 — stock vs ETF breakdown
+    const stockPct = Object.entries(staticData).filter(([,d]) => !["VTI","VXUS"].includes(Object.keys(staticData).find(k => staticData[k] === d))).reduce((s,[t,d]) => {
+      if (!["VTI","VXUS"].includes(t)) return s + d.allocation; return s;
+    }, 0);
+    const etfPct = 100 - stockPct;
+    const stockDash = (stockPct / 100) * circ;
+    const etfDash = (etfPct / 100) * circ;
+
+    // Chart 3 — bucket breakdown (Aggressive / Moderate / Anchor)
+    const buckets = {};
+    Object.entries(staticData).forEach(([t, d]) => {
+      const key = d.bucket.split("-")[0].split(" ")[0]; // "Aggressive", "Moderate", "Anchor"
+      buckets[key] = (buckets[key] || 0) + d.allocation;
+    });
+    const bucketColors = { Aggressive: "#ef4444", Moderate: "#f59e0b", Anchor: "#3b82f6" };
+    let offset3 = 0;
+    const bucketSlices = Object.entries(buckets).map(([key, pct]) => {
+      const dash = (pct / 100) * circ;
+      const s = { key, pct, dash, gap: circ - dash, offset: offset3, color: bucketColors[key] || "#888" };
+      offset3 += dash; return s;
+    });
+
     return (
-      <div style={{ display: "flex", alignItems: "center", gap: 20, flexWrap: "wrap", justifyContent: "center" }}>
-        <svg width="160" height="160" viewBox="0 0 160 160">
-          {slices.map((s, i) => <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.accent} strokeWidth={sw} strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={-s.offset + circ / 4} style={{ cursor: "pointer", opacity: selected === s.ticker ? 1 : 0.65, transition: "opacity 0.2s" }} onClick={() => { setSelected(s.ticker); setActiveTab(0); }} />)}
-          <text x={cx} y={cy - 5} textAnchor="middle" fontSize="10" fill="#666" fontWeight="700">Split</text>
-          <text x={cx} y={cy + 10} textAnchor="middle" fontSize="10" fill="#666" fontWeight="600">70/30</text>
-        </svg>
+      <div>
+        {/* Three donuts side by side */}
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap", marginBottom: 20 }}>
+
+          {/* Holdings donut */}
+          <div style={{ textAlign: "center" }}>
+            <svg width="140" height="140" viewBox="0 0 160 160">
+              {slices.map((s, i) => <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.accent} strokeWidth={sw} strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={-s.offset + circ / 4} style={{ cursor: "pointer", opacity: selected === s.ticker ? 1 : 0.65, transition: "opacity 0.2s" }} onClick={() => { setSelected(s.ticker); setActiveTab(0); }} />)}
+              <text x={cx} y={cy - 6} textAnchor="middle" fontSize="10" fill="#666" fontWeight="700">Holdings</text>
+              <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#999">7 stocks</text>
+            </svg>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>By Position</div>
+          </div>
+
+          {/* Stock vs ETF donut */}
+          <div style={{ textAlign: "center" }}>
+            <svg width="140" height="140" viewBox="0 0 160 160">
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#667eea" strokeWidth={sw} strokeDasharray={`${stockDash} ${circ - stockDash}`} strokeDashoffset={circ / 4} />
+              <circle cx={cx} cy={cy} r={r} fill="none" stroke="#10b981" strokeWidth={sw} strokeDasharray={`${etfDash} ${circ - etfDash}`} strokeDashoffset={circ / 4 - stockDash} />
+              <text x={cx} y={cy - 6} textAnchor="middle" fontSize="11" fill="#333" fontWeight="800">{stockPct}%</text>
+              <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#999">Stocks</text>
+            </svg>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>Stocks vs ETFs</div>
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 4 }}>
+              <span style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#667eea", display: "inline-block" }} />Stocks {stockPct}%</span>
+              <span style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />ETFs {etfPct}%</span>
+            </div>
+          </div>
+
+          {/* Risk bucket donut */}
+          <div style={{ textAlign: "center" }}>
+            <svg width="140" height="140" viewBox="0 0 160 160">
+              {bucketSlices.map((s, i) => <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color} strokeWidth={sw} strokeDasharray={`${s.dash} ${s.gap}`} strokeDashoffset={-s.offset + circ / 4} />)}
+              <text x={cx} y={cy - 6} textAnchor="middle" fontSize="10" fill="#666" fontWeight="700">Risk</text>
+              <text x={cx} y={cy + 8} textAnchor="middle" fontSize="9" fill="#999">Mix</text>
+            </svg>
+            <div style={{ fontSize: 11, fontWeight: 700, color: "#555" }}>By Risk Level</div>
+            <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 4, flexWrap: "wrap" }}>
+              {bucketSlices.map((s, i) => (
+                <span key={i} style={{ fontSize: 10, display: "flex", alignItems: "center", gap: 3 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: s.color, display: "inline-block" }} />{s.key} {s.pct}%
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Holdings legend */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6 }}>
           {Object.entries(staticData).map(([t, d]) => (
-            <div key={t} onClick={() => { setSelected(t); setActiveTab(0); }} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "4px 8px", borderRadius: 8, background: selected === t ? `${d.accent}18` : "transparent" }}>
+            <div key={t} onClick={() => { setSelected(t); setActiveTab(0); }} style={{ display: "flex", alignItems: "center", gap: 6, cursor: "pointer", padding: "5px 8px", borderRadius: 10, background: selected === t ? `${d.accent}18` : "#f9f9f9", border: selected === t ? `1px solid ${d.accent}40` : "1px solid transparent", transition: "all 0.2s" }}>
               <div style={{ width: 9, height: 9, borderRadius: "50%", background: d.accent, flexShrink: 0 }} />
               <span style={{ fontSize: 12, fontWeight: 700, color: d.accent }}>{t}</span>
               <span style={{ fontSize: 11, color: "#888" }}>{d.allocation}%</span>
@@ -704,6 +771,10 @@ export default function App() {
         @keyframes fadeInDown { from { opacity:0; transform:translateX(-50%) translateY(-20px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes confettiFall { 0% { transform: translateY(-20px) rotate(0deg); opacity:1; } 100% { transform: translateY(100vh) rotate(720deg); opacity:0; } }
+        @keyframes tickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+        @keyframes float { 0% { transform: translateY(0px) scale(1); } 100% { transform: translateY(-12px) scale(1.15); } }
+        @keyframes pulse { 0%,100% { opacity:1; box-shadow: 0 0 8px #4ade80; } 50% { opacity:0.6; box-shadow: 0 0 16px #4ade80; } }
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap');
         @keyframes priceFlash { 0%,100% { background: transparent; } 50% { background: rgba(102,126,234,0.12); } }
         @keyframes slideIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
         .tabs::-webkit-scrollbar { display: none; }
@@ -732,52 +803,128 @@ export default function App() {
       )}
 
       {/* Header */}
-      <div style={{ background: "linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%)", padding: "24px 20px 20px", textAlign: "center", color: "white" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
-          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: 3, opacity: 0.85, textTransform: "uppercase" }}>Joint Brokerage</div>
-          <div style={{ display: "flex", gap: 6 }}>
-            <button onClick={() => setShowNicknameModal(true)} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "white", borderRadius: 100, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}>✏️</button>
-          </div>
-        </div>
-        <h1 style={{ fontSize: "clamp(20px,5vw,32px)", fontWeight: 900, margin: "0 0 8px" }}>{nickname || "Our Investment Hub"} 💰</h1>
-
-        {todayPct !== null && (
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: todayPct >= 0 ? "rgba(74,222,128,0.25)" : "rgba(248,113,113,0.25)", borderRadius: 100, padding: "5px 16px", marginBottom: 10 }}>
-            <span style={{ fontSize: 16 }}>{todayPct >= 0 ? "📈" : "📉"}</span>
-            <span style={{ fontSize: 13, fontWeight: 800 }}>Portfolio {todayPct >= 0 ? "+" : ""}{todayPct.toFixed(2)}% today</span>
-            {portfolioValue && <span style={{ fontSize: 12, opacity: 0.9 }}>• ${portfolioValue.toFixed(2)} live</span>}
-          </div>
-        )}
-
-        {/* Live status */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginBottom: 12 }}>
-          {loading ? <div style={{ width: 10, height: 10, border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid white", borderRadius: "50%", animation: "spin 1s linear infinite" }} /> : <div style={{ width: 8, height: 8, borderRadius: "50%", background: apiError ? "#fbbf24" : "#4ade80", boxShadow: apiError ? "0 0 6px #fbbf24" : "0 0 6px #4ade80" }} />}
-          <span style={{ fontSize: 11, opacity: 0.85, fontWeight: 600 }}>{loading ? "Fetching..." : apiError ? "Using reference data" : `Live • ${lastUpdated} • ↻ ${countdown}s`}</span>
-          <button onClick={fetchLiveData} style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "white", borderRadius: 100, padding: "3px 10px", fontSize: 11, cursor: "pointer", fontWeight: 600 }}>↻</button>
-        </div>
-
-        {/* Summary pills */}
-        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 6, marginBottom: 14 }}>
-          {[{ label: "Value", value: portfolioValue ? `$${portfolioValue.toFixed(0)}` : "$1,129.59" }, { label: "Positions", value: "7" }, { label: "Stocks", value: "70%" }, { label: "ETFs", value: "30% ✅" }, { label: `VIX ${vix ? vix.toFixed(1) : "—"} · ${fgLabel}`, value: "", vixPill: true, vixColor: fgColor }].map((item, i) => (
-            <div key={i} style={{ background: item.vixPill ? item.vixColor : "rgba(255,255,255,0.2)", backdropFilter: "blur(10px)", borderRadius: 100, padding: "5px 12px", fontSize: 11, fontWeight: 700, boxShadow: item.vixPill ? `0 2px 12px ${item.vixColor}60` : "none" }}>
-              {item.vixPill
-                ? <span style={{ color: "white", fontWeight: 800 }}>{item.label}</span>
-                : <><span style={{ opacity: 0.8 }}>{item.label}: </span><span style={{ fontWeight: 800, color: item.color || "white" }}>{item.value}</span></>
-              }
-            </div>
+      <div style={{ background: "linear-gradient(135deg, #0f0c29 0%, #302b63 40%, #24243e 100%)", padding: "0", textAlign: "center", color: "white", position: "relative", overflow: "hidden" }}>
+        {/* Animated particle background */}
+        <div style={{ position: "absolute", inset: 0, overflow: "hidden", pointerEvents: "none" }}>
+          {[...Array(18)].map((_, i) => (
+            <div key={i} style={{
+              position: "absolute",
+              width: i % 3 === 0 ? 3 : i % 3 === 1 ? 2 : 1.5,
+              height: i % 3 === 0 ? 3 : i % 3 === 1 ? 2 : 1.5,
+              borderRadius: "50%",
+              background: ["#667eea","#f093fb","#4ade80","#fbbf24","#a78bfa","#34d399"][i % 6],
+              left: `${(i * 17 + 5) % 100}%`,
+              top: `${(i * 23 + 10) % 100}%`,
+              opacity: 0.4 + (i % 3) * 0.15,
+              animation: `float ${3 + (i % 4)}s ease-in-out ${i * 0.3}s infinite alternate`,
+              boxShadow: `0 0 6px ${["#667eea","#f093fb","#4ade80","#fbbf24","#a78bfa","#34d399"][i % 6]}`,
+            }} />
           ))}
         </div>
 
+        {/* Top bar */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 20px 0", position: "relative", zIndex: 2 }}>
+          <div style={{ fontSize: 9, fontWeight: 800, letterSpacing: 4, opacity: 0.6, textTransform: "uppercase", fontFamily: "'SF Pro Display', system-ui" }}>Joint Brokerage</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            {loading
+              ? <div style={{ width: 7, height: 7, border: "2px solid rgba(255,255,255,0.3)", borderTop: "2px solid white", borderRadius: "50%", animation: "spin 1s linear infinite" }} />
+              : <div style={{ width: 7, height: 7, borderRadius: "50%", background: apiError ? "#fbbf24" : "#4ade80", boxShadow: apiError ? "0 0 8px #fbbf24" : "0 0 8px #4ade80", animation: "pulse 2s ease-in-out infinite" }} />}
+            <span style={{ fontSize: 10, opacity: 0.7, fontWeight: 600 }}>{loading ? "Fetching..." : apiError ? "Reference data" : `Live · ${lastUpdated} · ↻${countdown}s`}</span>
+            <button onClick={fetchLiveData} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "white", borderRadius: 100, padding: "3px 10px", fontSize: 10, cursor: "pointer", fontWeight: 700, backdropFilter: "blur(10px)" }}>↻</button>
+            <button onClick={() => setShowNicknameModal(true)} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", color: "white", borderRadius: 100, padding: "3px 8px", fontSize: 11, cursor: "pointer" }}>✏️</button>
+          </div>
+        </div>
+
+        {/* Title */}
+        <div style={{ padding: "12px 20px 0", position: "relative", zIndex: 2 }}>
+          <h1 style={{ fontSize: "clamp(22px,5.5vw,38px)", fontWeight: 900, margin: "0 0 4px", letterSpacing: -1, fontFamily: "'SF Pro Display', 'Helvetica Neue', system-ui", background: "linear-gradient(135deg, #ffffff 0%, #e0d7ff 50%, #f093fb 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+            {nickname || "Our Investment Hub"} 💰
+          </h1>
+        </div>
+
+        {/* Hero portfolio value */}
+        <div style={{ padding: "8px 20px 0", position: "relative", zIndex: 2 }}>
+          {portfolioValue ? (
+            <div style={{ marginBottom: 6 }}>
+              <div style={{ fontSize: "clamp(32px,8vw,52px)", fontWeight: 900, letterSpacing: -2, fontFamily: "'SF Pro Display', system-ui", lineHeight: 1 }}>
+                ${portfolioValue.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </div>
+              {totals.tc > 0 && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
+                  <span style={{ fontSize: 12, opacity: 0.55 }}>Cost basis ${totals.tc.toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</span>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: totals.pnl >= 0 ? "#4ade80" : "#f87171", background: totals.pnl >= 0 ? "rgba(74,222,128,0.15)" : "rgba(248,113,113,0.15)", borderRadius: 100, padding: "2px 10px" }}>
+                    {totals.pnl >= 0 ? "+" : ""}${totals.pnl.toFixed(0)} · {totals.pnl >= 0 ? "▲" : "▼"}{Math.abs(totals.pct).toFixed(2)}% all time
+                  </span>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ fontSize: 14, opacity: 0.5, marginBottom: 6 }}>Add positions to see live value</div>
+          )}
+
+          {/* Today's move badge */}
+          {todayPct !== null && (
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 6, background: todayPct >= 0 ? "rgba(74,222,128,0.2)" : "rgba(248,113,113,0.2)", border: `1px solid ${todayPct >= 0 ? "rgba(74,222,128,0.4)" : "rgba(248,113,113,0.4)"}`, borderRadius: 100, padding: "5px 14px", marginBottom: 14, backdropFilter: "blur(10px)" }}>
+              <span>{todayPct >= 0 ? "📈" : "📉"}</span>
+              <span style={{ fontSize: 12, fontWeight: 800 }}>Portfolio {todayPct >= 0 ? "+" : ""}{todayPct.toFixed(2)}% today</span>
+              {portfolioValue && todayPct !== null && (
+                <span style={{ fontSize: 11, opacity: 0.8 }}>· {todayPct >= 0 ? "+" : ""}${Math.abs(portfolioValue * todayPct / 100).toFixed(2)} today</span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Glass morphism stats row */}
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", gap: 8, padding: "0 16px 14px", position: "relative", zIndex: 2 }}>
+          {(() => {
+            const bestTicker = TICKERS.reduce((best, t) => {
+              const pct = liveData[t] ? parseFloat(liveData[t].changePct) : -999;
+              return pct > (liveData[best] ? parseFloat(liveData[best].changePct) : -999) ? t : best;
+            }, TICKERS[0]);
+            const bestPct = liveData[bestTicker] ? parseFloat(liveData[bestTicker].changePct) : null;
+            const todayDollar = portfolioValue && todayPct !== null ? portfolioValue * todayPct / 100 : null;
+            const stats = [
+              { label: "Today P&L", value: todayDollar != null ? `${todayDollar >= 0 ? "+" : ""}$${Math.abs(todayDollar).toFixed(2)}` : "—", color: todayDollar != null ? (todayDollar >= 0 ? "#4ade80" : "#f87171") : "white" },
+              { label: "Best Today", value: bestPct != null ? `${staticData[bestTicker].emoji} ${bestTicker} +${bestPct.toFixed(2)}%` : "—", color: "#4ade80" },
+              { label: `VIX ${vix ? vix.toFixed(1) : "—"}`, value: fgLabel, color: fgColor, glow: fgColor },
+              { label: "Positions", value: `${TICKERS.length} holdings`, color: "white" },
+            ];
+            return stats.map((s, i) => (
+              <div key={i} style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 14, padding: "8px 16px", minWidth: 100, boxShadow: s.glow ? `0 0 20px ${s.glow}30` : "0 4px 20px rgba(0,0,0,0.2)" }}>
+                <div style={{ fontSize: 10, opacity: 0.55, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 3 }}>{s.label}</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: s.color }}>{s.value}</div>
+              </div>
+            ));
+          })()}
+        </div>
+
+        {/* Scrolling ticker tape */}
+        <div style={{ overflow: "hidden", borderTop: "1px solid rgba(255,255,255,0.08)", borderBottom: "1px solid rgba(255,255,255,0.08)", background: "rgba(0,0,0,0.2)", padding: "7px 0", position: "relative", zIndex: 2 }}>
+          <div style={{ display: "flex", gap: 32, animation: "tickerScroll 20s linear infinite", whiteSpace: "nowrap", width: "max-content" }}>
+            {[...TICKERS, ...TICKERS].map((ticker, i) => {
+              const ld = liveData[ticker];
+              const pct = ld ? parseFloat(ld.changePct) : null;
+              const isUp = pct != null ? pct >= 0 : true;
+              return (
+                <span key={i} onClick={() => { setSelected(ticker); setActiveSection(0); setActiveTab(0); }} style={{ fontSize: 11, fontWeight: 700, cursor: "pointer", color: pct != null ? (isUp ? "#4ade80" : "#f87171") : "rgba(255,255,255,0.4)" }}>
+                  {staticData[ticker].emoji} {ticker} {ld ? `$${parseFloat(ld.price).toFixed(2)}` : "—"} {pct != null ? `${isUp ? "▲" : "▼"}${Math.abs(pct).toFixed(2)}%` : ""}
+                </span>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Rainbow allocation bar */}
-        <div style={{ maxWidth: 500, margin: "0 auto", padding: "0 10px" }}>
-          <div style={{ display: "flex", borderRadius: 100, overflow: "hidden", height: 14, gap: 2 }}>
+        <div style={{ maxWidth: 500, margin: "12px auto 14px", padding: "0 20px", position: "relative", zIndex: 2 }}>
+          <div style={{ display: "flex", borderRadius: 100, overflow: "hidden", height: 6, gap: 2 }}>
             {Object.entries(staticData).map(([ticker, d]) => (
-              <div key={ticker} onClick={() => { setSelected(ticker); setActiveTab(0); }} title={`${ticker}: ${d.allocation}%`} style={{ flex: d.allocation, background: d.gradient, cursor: "pointer", opacity: selected === ticker ? 1 : 0.6, transform: selected === ticker ? "scaleY(1.2)" : "none", transition: "all 0.3s ease" }} />
+              <div key={ticker} onClick={() => { setSelected(ticker); setActiveTab(0); }} title={`${ticker}: ${d.allocation}%`}
+                style={{ flex: d.allocation, background: d.gradient, cursor: "pointer", opacity: selected === ticker ? 1 : 0.5, transition: "all 0.3s ease", boxShadow: selected === ticker ? `0 0 8px ${d.accent}` : "none" }} />
             ))}
           </div>
-          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 5 }}>
             {Object.entries(staticData).map(([ticker]) => (
-              <div key={ticker} onClick={() => { setSelected(ticker); setActiveTab(0); }} style={{ fontSize: 9, fontWeight: 800, opacity: selected === ticker ? 1 : 0.55, cursor: "pointer" }}>{ticker}</div>
+              <div key={ticker} onClick={() => { setSelected(ticker); setActiveTab(0); }} style={{ fontSize: 9, fontWeight: 800, opacity: selected === ticker ? 1 : 0.4, cursor: "pointer", transition: "opacity 0.2s" }}>{ticker}</div>
             ))}
           </div>
         </div>
@@ -828,7 +975,7 @@ export default function App() {
             <div style={{ textAlign: "center", marginBottom: 12 }}>
               <button onClick={() => setShowDonut(d => !d)} style={{ background: showDonut ? "linear-gradient(135deg, #667eea, #764ba2)" : "white", color: showDonut ? "white" : "#888", border: "none", borderRadius: 100, padding: "7px 18px", fontSize: 12, fontWeight: 700, cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,0.08)", transition: "all 0.2s ease" }}>🥧 {showDonut ? "Hide" : "Show"} Allocation Chart</button>
             </div>
-            {showDonut && <div style={{ background: "white", borderRadius: 20, padding: 20, marginBottom: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}><div style={{ textAlign: "center", fontWeight: 800, fontSize: 15, color: "#333", marginBottom: 16 }}>📊 Portfolio Allocation</div><DonutChart /></div>}
+            {showDonut && <div style={{ background: "white", borderRadius: 20, padding: 20, marginBottom: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}><div style={{ textAlign: "center", fontWeight: 800, fontSize: 15, color: "#333", marginBottom: 16 }}>📊 Portfolio Breakdown</div><DonutChart /></div>}
 
             {/* ── REBALANCING ALERTS ── */}
             {(() => {
