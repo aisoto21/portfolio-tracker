@@ -221,10 +221,20 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [lastUpdated, setLastUpdated] = useState(null);
   const [apiError, setApiError] = useState(false);
-  const [positions, setPositions] = useState(DEFAULT_POSITIONS);
+  const [positions, setPositions] = useState(() => {
+    try {
+      const saved = localStorage.getItem("portfolioPositions");
+      return saved ? { ...DEFAULT_POSITIONS, ...JSON.parse(saved) } : DEFAULT_POSITIONS;
+    } catch { return DEFAULT_POSITIONS; }
+  });
   const [editingPositions, setEditingPositions] = useState(false);
   const [countdown, setCountdown] = useState(15);
-  const [priceAlerts, setPriceAlerts] = useState({ SCHD: "", GEV: "750", LLY: "", GOOGL: "", ORCL: "", MELI: "", CRM: "", ABBV: "", MRK: "" });
+  const [priceAlerts, setPriceAlerts] = useState(() => {
+    try {
+      const saved = localStorage.getItem("priceAlerts");
+      return saved ? JSON.parse(saved) : { SCHD: "", GEV: "750", LLY: "", GOOGL: "", ORCL: "", MELI: "", CRM: "", ABBV: "", MRK: "" };
+    } catch { return { SCHD: "", GEV: "750", LLY: "", GOOGL: "", ORCL: "", MELI: "", CRM: "", ABBV: "", MRK: "" }; }
+  });
   const [customWatchlist, setCustomWatchlist] = useState(() => {
     try { return JSON.parse(localStorage.getItem("customWatchlist") || "[]"); } catch { return []; }
   });
@@ -240,7 +250,9 @@ export default function App() {
   const [tooltip, setTooltip] = useState(null);
   const [confetti, setConfetti] = useState([]);
   const [showDonut, setShowDonut] = useState(false);
-  const [nickname, setNickname] = useState("");
+  const [nickname, setNickname] = useState(() => {
+    try { return localStorage.getItem("portfolioNickname") || ""; } catch { return ""; }
+  });
   const [nicknameInput, setNicknameInput] = useState("");
   const [showNicknameModal, setShowNicknameModal] = useState(false);
   const [newsFilter, setNewsFilter] = useState("ALL");
@@ -484,6 +496,19 @@ export default function App() {
     const i = setInterval(fetchSparklines, 5 * 60 * 1000); // refresh every 5 min
     return () => clearInterval(i);
   }, [fetchSparklines]);
+
+  // Save positions to localStorage whenever they change
+  useEffect(() => {
+    try { localStorage.setItem("portfolioPositions", JSON.stringify(positions)); } catch {}
+  }, [positions]);
+
+  useEffect(() => {
+    try { localStorage.setItem("portfolioNickname", nickname); } catch {}
+  }, [nickname]);
+
+  useEffect(() => {
+    try { localStorage.setItem("priceAlerts", JSON.stringify(priceAlerts)); } catch {}
+  }, [priceAlerts]);
 
   // Save custom watchlist to localStorage whenever it changes
   useEffect(() => {
