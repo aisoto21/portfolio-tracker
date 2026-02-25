@@ -1129,28 +1129,23 @@ export default function App() {
               {[...TICKERS, ...TICKERS, ...TICKERS].map((ticker, i) => {
                 const ld = liveData[ticker];
                 const pct = ld ? parseFloat(ld.changePct) : null;
-                const isUp = pct != null ? pct >= 0 : true;
+                const state = ld?.marketState;
+                const isPost = state === "POST" && ld?.postMarketPrice;
+                const isPre = state === "PRE" && ld?.preMarketPrice;
+                const extPrice = isPost ? ld.postMarketPrice : isPre ? ld.preMarketPrice : null;
+                const extPct = isPost ? ld.postMarketChangePct : isPre ? ld.preMarketChangePct : null;
+                const displayPrice = extPrice ? parseFloat(extPrice).toFixed(2) : ld ? parseFloat(ld.price).toFixed(2) : null;
+                const displayPct = extPct != null ? extPct : pct;
+                const displayUp = displayPct != null ? displayPct >= 0 : true;
                 return (
-                  {(() => {
-                    const state = ld?.marketState;
-                    const isPost = state === "POST" && ld?.postMarketPrice;
-                    const isPre = state === "PRE" && ld?.preMarketPrice;
-                    const extPrice = isPost ? ld.postMarketPrice : isPre ? ld.preMarketPrice : null;
-                    const extPct = isPost ? ld.postMarketChangePct : isPre ? ld.preMarketChangePct : null;
-                    const displayPrice = extPrice || (ld ? parseFloat(ld.price) : null);
-                    const displayPct = extPct != null ? extPct : pct;
-                    const displayUp = displayPct != null ? displayPct >= 0 : true;
-                    return (
-                      <span key={i} onClick={() => { setSelected(ticker); setActiveSection(0); setActiveTab(0); }} style={{ fontSize: 11, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(255,255,255,0.85)" }}>
-                        <span style={{ opacity: 0.5 }}>{staticData[ticker].emoji}</span>
-                        <span style={{ fontWeight: 800 }}>{ticker}</span>
-                        {displayPrice && <span>${parseFloat(displayPrice).toFixed(2)}</span>}
-                        {displayPct != null && <span style={{ color: displayUp ? "#4ade80" : "#f87171", fontWeight: 800 }}>{displayUp ? "▲" : "▼"}{Math.abs(displayPct).toFixed(2)}%</span>}
-                        {(isPost || isPre) && <span style={{ fontSize: 9, background: isPost ? "rgba(251,191,36,0.2)" : "rgba(147,197,253,0.2)", color: isPost ? "#fbbf24" : "#93c5fd", borderRadius: 4, padding: "1px 4px", fontWeight: 800 }}>{isPost ? "AH" : "PM"}</span>}
-                        <span style={{ opacity: 0.15, marginLeft: 4 }}>|</span>
-                      </span>
-                    );
-                  })()}
+                  <span key={i} onClick={() => { setSelected(ticker); setActiveSection(0); setActiveTab(0); }} style={{ fontSize: 11, fontWeight: 700, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5, color: "rgba(255,255,255,0.85)" }}>
+                    <span style={{ opacity: 0.5 }}>{staticData[ticker].emoji}</span>
+                    <span style={{ fontWeight: 800 }}>{ticker}</span>
+                    {displayPrice && <span>${displayPrice}</span>}
+                    {displayPct != null && <span style={{ color: displayUp ? "#4ade80" : "#f87171", fontWeight: 800 }}>{displayUp ? "▲" : "▼"}{Math.abs(displayPct).toFixed(2)}%</span>}
+                    {(isPost || isPre) && <span style={{ fontSize: 9, background: isPost ? "rgba(251,191,36,0.2)" : "rgba(147,197,253,0.2)", color: isPost ? "#fbbf24" : "#93c5fd", borderRadius: 4, padding: "1px 4px", fontWeight: 800 }}>{isPost ? "AH" : "PM"}</span>}
+                    <span style={{ opacity: 0.15, marginLeft: 4 }}>|</span>
+                  </span>
                 );
               })}
             </div>
