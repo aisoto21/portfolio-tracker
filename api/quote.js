@@ -42,6 +42,11 @@ async function fetchPrice(ticker, retries = 3) {
       const price = meta.regularMarketPrice;
       const prevClose = meta.chartPreviousClose || meta.previousClose || price;
       const change = price - prevClose;
+      const postPrice = meta.postMarketPrice || null;
+      const prePrice = meta.preMarketPrice || null;
+      const postChange = postPrice ? ((postPrice - price) / price) * 100 : null;
+      const preChange = prePrice ? ((prePrice - price) / price) * 100 : null;
+      const marketState = meta.marketState || "REGULAR"; // REGULAR, POST, PRE, CLOSED
       return {
         symbol: ticker, price, change,
         changesPercentage: (change / prevClose) * 100,
@@ -51,6 +56,11 @@ async function fetchPrice(ticker, retries = 3) {
         volume: meta.regularMarketVolume || null,
         week52High: meta.fiftyTwoWeekHigh || null,
         week52Low: meta.fiftyTwoWeekLow || null,
+        postMarketPrice: postPrice,
+        postMarketChangePct: postChange,
+        preMarketPrice: prePrice,
+        preMarketChangePct: preChange,
+        marketState,
       };
     } catch (e) {
       if (attempt < retries - 1) { await sleep(300); continue; }
