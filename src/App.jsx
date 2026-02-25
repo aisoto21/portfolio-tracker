@@ -1276,25 +1276,95 @@ export default function App() {
                                 if (field.key === "consensus") return (ad?.consensus || data.consensus) + (ad?.consensus ? " 🟢" : "");
                                 if (field.key === "currentRatio") {
                                   const val = ad?.currentRatio;
+                                  const sector = data.sector || "";
+                                  const note = val >= 2.5 ? "Very strong liquidity — can easily cover short-term obligations" :
+                                    val >= 1.5 ? "Healthy — comfortably covers short-term debt" :
+                                    val >= 1.0 ? "Adequate — meets obligations but limited buffer" :
+                                    val > 0 ? "Tight — watch closely, may struggle with short-term liabilities" : null;
                                   return val != null ? (
-                                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                      <span style={{ fontWeight: 800, color: val >= 1.5 ? "#10b981" : val >= 1 ? "#f59e0b" : "#ef4444" }}>{val}</span>
-                                      <span style={{ fontSize: 11, color: "#aaa" }}>{val >= 1.5 ? "✅ Healthy" : val >= 1 ? "⚠️ Adequate" : "🔴 Tight"}</span>
-                                      <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>🟢</span>
-                                    </span>
+                                    <div>
+                                      <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                        <span style={{ fontWeight: 800, fontSize: 14, color: val >= 1.5 ? "#10b981" : val >= 1 ? "#f59e0b" : "#ef4444" }}>{val}</span>
+                                        <span style={{ fontSize: 11, fontWeight: 700, color: val >= 1.5 ? "#10b981" : val >= 1 ? "#f59e0b" : "#ef4444" }}>{val >= 1.5 ? "✅ Healthy" : val >= 1 ? "⚠️ Adequate" : "🔴 Tight"}</span>
+                                        <span style={{ fontSize: 10, color: "#10b981" }}>🟢 live</span>
+                                      </span>
+                                      {note && <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>{note}</div>}
+                                    </div>
                                   ) : data.currentRatio || "N/A";
                                 }
                                 if (field.key === "debtToEquity") {
                                   const val = ad?.debtToEquity;
+                                  const isBanking = (data.sector||"").includes("Finance") || (data.sector||"").includes("Bank");
+                                  const note = val <= 0.3 ? "Fortress balance sheet — very little debt, maximum financial flexibility" :
+                                    val <= 0.8 ? "Conservative leverage — well-managed debt relative to equity" :
+                                    val <= 1.5 ? `Moderate leverage — manageable if FCF is strong (check FCF below)` :
+                                    val <= 3.0 ? "Elevated debt — acceptable for asset-heavy or high-FCF businesses, monitor closely" :
+                                    "High leverage — needs consistently strong cash flow to service debt";
                                   return val != null ? (
-                                    <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                                      <span style={{ fontWeight: 800, color: val <= 0.5 ? "#10b981" : val <= 1.5 ? "#f59e0b" : "#ef4444" }}>{val}x</span>
-                                      <span style={{ fontSize: 11, color: "#aaa" }}>{val <= 0.5 ? "✅ Low leverage" : val <= 1.5 ? "⚠️ Moderate" : "🔴 High leverage"}</span>
-                                      <span style={{ fontSize: 10, color: "#10b981", fontWeight: 700 }}>🟢</span>
-                                    </span>
+                                    <div>
+                                      <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                        <span style={{ fontWeight: 800, fontSize: 14, color: val <= 0.5 ? "#10b981" : val <= 1.5 ? "#f59e0b" : "#ef4444" }}>{val}x</span>
+                                        <span style={{ fontSize: 11, fontWeight: 700, color: val <= 0.5 ? "#10b981" : val <= 1.5 ? "#f59e0b" : "#ef4444" }}>{val <= 0.5 ? "✅ Low leverage" : val <= 1.5 ? "⚠️ Moderate" : "🔴 High"}</span>
+                                        <span style={{ fontSize: 10, color: "#10b981" }}>🟢 live</span>
+                                      </span>
+                                      {note && <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>{note}</div>}
+                                    </div>
                                   ) : data.debtEquity || "N/A";
                                 }
-                                if (field.key === "grossMargin") return (ad?.grossMarginLive || data.grossMargin) + (ad?.grossMarginLive ? " 🟢" : "");
+                                if (field.key === "grossMargin") {
+                                  const raw = ad?.grossMarginLive || data.grossMargin;
+                                  const val = typeof raw === "string" ? parseFloat(raw) : raw;
+                                  const sector = data.sector || "";
+                                  const isSoftware = sector.includes("Software") || sector.includes("Tech");
+                                  const isRetail = sector.includes("Retail") || sector.includes("Distribution");
+                                  const note = !val ? null :
+                                    val >= 70 ? `Exceptional — top-tier pricing power, ~top 10% of all companies${isSoftware ? ". Software-like margins." : ""}` :
+                                    val >= 50 ? "Strong — significant competitive moat, pricing power above most industries" :
+                                    val >= 35 ? "Solid — healthy margins, room to absorb cost pressure" :
+                                    val >= 20 ? `Moderate — ${isRetail ? "normal for distribution/retail businesses" : "watch for margin compression"}` :
+                                    "Thin margins — commodity-like business, volume-dependent";
+                                  return (
+                                    <div>
+                                      <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                        <span style={{ fontWeight: 800, fontSize: 14, color: val >= 50 ? "#10b981" : val >= 25 ? "#f59e0b" : "#888" }}>{raw}</span>
+                                        {ad?.grossMarginLive && <span style={{ fontSize: 10, color: "#10b981" }}>🟢 live</span>}
+                                      </span>
+                                      {note && <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>{note}</div>}
+                                    </div>
+                                  );
+                                }
+                                if (field.key === "operatingMargin") {
+                                  const raw = ad?.operatingMarginLive || data.operatingMargin;
+                                  const val = typeof raw === "string" ? parseFloat(raw) : raw;
+                                  const note = !val ? null :
+                                    val >= 35 ? "Best-in-class operating efficiency — every dollar of revenue generates exceptional profit" :
+                                    val >= 20 ? "Strong operator — well above average, management executing well" :
+                                    val >= 10 ? "Decent efficiency — room for improvement but not alarming" :
+                                    val >= 0 ? "Thin operating profit — cost structure needs watching" :
+                                    "Operating at a loss — needs path to profitability";
+                                  return (
+                                    <div>
+                                      <span style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 3 }}>
+                                        <span style={{ fontWeight: 800, fontSize: 14, color: val >= 20 ? "#10b981" : val >= 10 ? "#f59e0b" : "#ef4444" }}>{raw}</span>
+                                        {ad?.operatingMarginLive && <span style={{ fontSize: 10, color: "#10b981" }}>🟢 live</span>}
+                                      </span>
+                                      {note && <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5 }}>{note}</div>}
+                                    </div>
+                                  );
+                                }
+                                if (field.key === "fcf") {
+                                  const raw = ad?.freeCashflow || data.fcf;
+                                  const note = typeof raw === "string" && raw.toLowerCase().includes("n/a") ? null :
+                                    typeof raw === "string" && raw.toLowerCase().includes("growing") ? "Rising FCF = more fuel for buybacks, dividends, and R&D without taking on debt" :
+                                    typeof raw === "string" && raw.toLowerCase().includes("strong") ? "Strong FCF = company self-funds its growth. This is the real profit check." :
+                                    "FCF is the ultimate reality check — profit after all real cash expenses";
+                                  return (
+                                    <div>
+                                      <span style={{ fontWeight: 700, fontSize: 13 }}>{raw || "N/A"}</span>
+                                      {note && <div style={{ fontSize: 11, color: "#888", lineHeight: 1.5, marginTop: 3 }}>{note}</div>}
+                                    </div>
+                                  );
+                                }
                                 return data[field.key];
                               })()}
                             </div>
@@ -1317,6 +1387,57 @@ export default function App() {
               <div style={{ fontSize: 26, fontWeight: 900, background: "linear-gradient(135deg, #667eea, #f093fb)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>My Portfolio P&L</div>
               <p style={{ color: "#888", fontSize: 13, marginTop: 4 }}>Enter your actual positions to track real gains & losses</p>
             </div>
+            {/* ── TODAY'S CONTRIBUTION BAR CHART ── */}
+            {hasPositions && Object.keys(liveData).length > 0 && (() => {
+              const contribs = TICKERS.map(t => {
+                const ld = liveData[t], pos = positions[t];
+                if (!ld?.price || !pos?.shares || !pos?.avgCost) return null;
+                const shares = parseFloat(pos.shares);
+                const pct = parseFloat(ld.changePct);
+                const price = parseFloat(ld.price);
+                const dollarMove = shares * price * (pct / 100);
+                return { ticker: t, dollarMove, pct, emoji: staticData[t].emoji, accent: staticData[t].accent, gradient: staticData[t].gradient };
+              }).filter(Boolean).sort((a, b) => b.dollarMove - a.dollarMove);
+              const totalMove = contribs.reduce((s, c) => s + c.dollarMove, 0);
+              const maxAbs = Math.max(...contribs.map(c => Math.abs(c.dollarMove)), 0.01);
+              return (
+                <div style={{ background: "white", borderRadius: 20, padding: "18px 20px", marginBottom: 16, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                    <div style={{ fontWeight: 800, fontSize: 15 }}>📊 Today's Contribution</div>
+                    <div style={{ fontSize: 13, fontWeight: 900, color: totalMove >= 0 ? "#10b981" : "#ef4444" }}>{totalMove >= 0 ? "+" : ""}${totalMove.toFixed(2)} today</div>
+                  </div>
+                  <div style={{ fontSize: 11, color: "#aaa", marginBottom: 16 }}>Which positions are helping vs hurting today</div>
+                  <div style={{ display: "grid", gap: 8 }}>
+                    {contribs.map((c, i) => (
+                      <div key={i} onClick={() => { setSelected(c.ticker); setActiveTab(0); }} style={{ cursor: "pointer" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                            <span style={{ fontSize: 14 }}>{c.emoji}</span>
+                            <span style={{ fontWeight: 800, fontSize: 13, color: "#333" }}>{c.ticker}</span>
+                            <span style={{ fontSize: 11, color: c.pct >= 0 ? "#10b981" : "#ef4444", fontWeight: 700 }}>{c.pct >= 0 ? "▲" : "▼"}{Math.abs(c.pct).toFixed(2)}%</span>
+                          </div>
+                          <span style={{ fontSize: 13, fontWeight: 900, color: c.dollarMove >= 0 ? "#10b981" : "#ef4444" }}>{c.dollarMove >= 0 ? "+" : ""}${c.dollarMove.toFixed(2)}</span>
+                        </div>
+                        <div style={{ background: "#f5f5f5", borderRadius: 100, height: 8, overflow: "visible", position: "relative" }}>
+                          <div style={{
+                            position: "absolute",
+                            left: c.dollarMove >= 0 ? "50%" : `${50 - (Math.abs(c.dollarMove) / maxAbs) * 50}%`,
+                            width: `${(Math.abs(c.dollarMove) / maxAbs) * 50}%`,
+                            height: "100%",
+                            background: c.dollarMove >= 0 ? c.gradient : "linear-gradient(135deg, #f87171, #ef4444)",
+                            borderRadius: 100,
+                            minWidth: 4,
+                            transition: "width 0.6s ease"
+                          }} />
+                          <div style={{ position: "absolute", left: "50%", top: -2, width: 1, height: 12, background: "#ddd" }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
+
             {totals.n > 0 && (
               <div style={{ background: totals.pnl >= 0 ? "linear-gradient(135deg, #d1fae5, #a7f3d0)" : "linear-gradient(135deg, #fee2e2, #fecaca)", borderRadius: 20, padding: "18px 20px", marginBottom: 16, border: `2px solid ${totals.pnl >= 0 ? "#10b981" : "#ef4444"}40` }}>
                 <div style={{ textAlign: "center" }}>
