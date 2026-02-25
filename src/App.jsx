@@ -860,7 +860,7 @@ export default function App() {
 
           {/* LEFT — value + name */}
           <div style={{ flex: "1 1 220px", minWidth: 0 }}>
-            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: 2, opacity: 0.45, textTransform: "uppercase", marginBottom: 6 }}>{nickname || "Our Investment Hub"}</div>
+            <div style={{ fontSize: "clamp(18px, 3vw, 26px)", fontWeight: 900, letterSpacing: -0.5, opacity: 0.9, marginBottom: 4, background: "linear-gradient(135deg, #ffffff 40%, #a78bfa 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{nickname || "Our Investment Hub"}</div>
             <div style={{ fontSize: "clamp(32px, 6vw, 54px)", fontWeight: 900, letterSpacing: -2, lineHeight: 1, marginBottom: 8, fontVariantNumeric: "tabular-nums" }}>
               {portfolioValue
                 ? <span style={{ background: "linear-gradient(135deg, #ffffff 30%, #c4b5fd 100%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
@@ -886,78 +886,6 @@ export default function App() {
                 {portfolioValue && <span style={{ fontSize: 11, opacity: 0.6 }}>· {todayPct >= 0 ? "+" : ""}${Math.abs(portfolioValue * todayPct / 100).toFixed(2)}</span>}
               </div>
             )}
-          </div>
-
-          {/* CENTER — Portfolio sparkline chart */}
-          <div style={{ flex: "1 1 200px", minWidth: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-            {(() => {
-              // Build blended portfolio chart from sparkline data
-              const tickersWithData = TICKERS.filter(t => sparklineData[t]?.points?.length > 1);
-              if (tickersWithData.length < 3) {
-                return (
-                  <div style={{ textAlign: "center", opacity: 0.25 }}>
-                    <div style={{ fontSize: 28, marginBottom: 6 }}>📊</div>
-                    <div style={{ fontSize: 11, fontWeight: 600 }}>Portfolio chart loads shortly</div>
-                  </div>
-                );
-              }
-              // Normalize each ticker's points to % change from open, weight by allocation
-              const minLen = Math.min(...tickersWithData.map(t => sparklineData[t].points.length));
-              const blended = Array.from({ length: minLen }, (_, i) => {
-                return tickersWithData.reduce((sum, t) => {
-                  const pts = sparklineData[t].points;
-                  const open = pts[0];
-                  const val = pts[Math.floor(i / minLen * pts.length)];
-                  const pctChange = open > 0 ? ((val - open) / open) : 0;
-                  return sum + pctChange * (staticData[t].allocation / 100);
-                }, 0);
-              });
-              const isUp = blended[blended.length - 1] >= 0;
-              const color = isUp ? "#4ade80" : "#f87171";
-              const glowColor = isUp ? "rgba(74,222,128,0.4)" : "rgba(248,113,113,0.4)";
-              const min = Math.min(...blended), max = Math.max(...blended);
-              const range = max - min || 0.001;
-              const W = 220, H = 70;
-              const pts = blended.map((v, i) => `${(i / (blended.length - 1)) * W},${H - ((v - min) / range) * (H - 8) - 4}`);
-              const pathD = "M " + pts.join(" L ");
-              const areaD = pathD + ` L ${W},${H} L 0,${H} Z`;
-              const lastX = (blended.length - 1) / (blended.length - 1) * W;
-              const lastY = H - ((blended[blended.length-1] - min) / range) * (H - 8) - 4;
-              const currentPct = (blended[blended.length - 1] * 100).toFixed(2);
-              return (
-                <div style={{ width: "100%", maxWidth: 240 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, opacity: 0.4, textTransform: "uppercase", letterSpacing: 1, textAlign: "center", marginBottom: 8 }}>Today's Journey</div>
-                  <div style={{ position: "relative" }}>
-                    <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", filter: `drop-shadow(0 0 8px ${glowColor})` }}>
-                      <defs>
-                        <linearGradient id="portfolioGrad" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor={color} stopOpacity="0.25" />
-                          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
-                        </linearGradient>
-                        <linearGradient id="lineGrad" x1="0" y1="0" x2="1" y2="0">
-                          <stop offset="0%" stopColor={color} stopOpacity="0.4" />
-                          <stop offset="100%" stopColor={color} stopOpacity="1" />
-                        </linearGradient>
-                      </defs>
-                      {/* Zero line */}
-                      {min < 0 && max > 0 && (
-                        <line x1="0" y1={H - ((0 - min) / range) * (H - 8) - 4} x2={W} y2={H - ((0 - min) / range) * (H - 8) - 4} stroke="rgba(255,255,255,0.1)" strokeWidth="1" strokeDasharray="3,3" />
-                      )}
-                      <path d={areaD} fill="url(#portfolioGrad)" />
-                      <path d={pathD} fill="none" stroke="url(#lineGrad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                      {/* Glowing current dot */}
-                      <circle cx={lastX} cy={lastY} r="5" fill={color} opacity="0.3" />
-                      <circle cx={lastX} cy={lastY} r="3" fill={color} />
-                    </svg>
-                  </div>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
-                    <span style={{ fontSize: 9, opacity: 0.3, fontWeight: 600 }}>Open</span>
-                    <span style={{ fontSize: 12, fontWeight: 900, color, letterSpacing: -0.5 }}>{isUp ? "▲" : "▼"}{Math.abs(parseFloat(currentPct))}% today</span>
-                    <span style={{ fontSize: 9, opacity: 0.3, fontWeight: 600 }}>Now</span>
-                  </div>
-                </div>
-              );
-            })()}
           </div>
 
           {/* CENTER — live portfolio sparkline */}
@@ -988,7 +916,7 @@ export default function App() {
               return (
                 <div style={{ width: "100%" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6, paddingLeft: 4, paddingRight: 4 }}>
-                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, opacity: 0.45, textTransform: "uppercase" }}>Today's Movement</span>
+                    <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: 1, opacity: 0.45, textTransform: "uppercase" }}>Today's Journey</span>
                     <span style={{ fontSize: 12, fontWeight: 900, color: c }}>{isUp ? "▲" : "▼"}{Math.abs(pctMove).toFixed(2)}%</span>
                   </div>
                   <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block", height: 70 }}>
