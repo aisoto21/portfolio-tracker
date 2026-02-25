@@ -1022,9 +1022,13 @@ export default function App() {
                 if (tickTime > now) break;
                 const minsSinceOpen = (tickTime - marketOpen) / 60000;
                 const x = (minsSinceOpen / totalMinutes) * W;
-                const label = tickTime.toLocaleTimeString([], { hour: "numeric", hour12: true }).replace(":00", "").replace(" ", "");
+                // Skip if too close to right edge (within 30px of now label)
+                if (x > W - 30) break;
+                const label = h < 12 ? `${h}AM` : h === 12 ? "12PM" : `${h-12}PM`;
                 hourTicks.push({ x, label });
               }
+              // Hide "Open" label if first tick is too close to left edge
+              const firstTickTooClose = hourTicks.length > 0 && hourTicks[0].x < 35;
 
               return (
                 <div style={{ width: "100%" }}>
@@ -1056,8 +1060,8 @@ export default function App() {
                           <text x={t.x} y={H + 13} textAnchor="middle" fontSize="7" fill="rgba(255,255,255,0.3)" fontWeight="600">{t.label}</text>
                         </g>
                       ))}
-                      {/* Open label */}
-                      <text x={4} y={H + 13} textAnchor="start" fontSize="7" fill="rgba(255,255,255,0.25)" fontWeight="600">Open</text>
+                      {/* Open label — hide if 10AM tick is too close */}
+                      {!firstTickTooClose && <text x={4} y={H + 13} textAnchor="start" fontSize="7" fill="rgba(255,255,255,0.25)" fontWeight="600">Open</text>}
                       {/* Now label */}
                       <text x={W - 2} y={H + 13} textAnchor="end" fontSize="7" fill="rgba(255,255,255,0.25)" fontWeight="600">{nowTime}</text>
                       {/* Chart area and line */}
